@@ -1,0 +1,13 @@
+User-agent: *
+
+# Block authenticated app pages — no value for crawlers
+Disallow: /dashboard
+Disallow: /generator
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /api/
+
+# Allow everything else
+Allow: /
+
+Sitemap: https://carouseln.com/sitemap-index.xml

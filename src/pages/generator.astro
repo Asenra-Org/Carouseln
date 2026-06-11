@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { AppShell } from '../components/layout/AppShell';
+import { Generator } from '../components/app/Generator';
+---
+
+<Layout title="Generator — Carouseln" showNavbar={false} showFooter={false} noindex={true}>
+  <AppShell client:load currentPath="/generator">
+    <Generator client:load />
+  </AppShell>
+</Layout>

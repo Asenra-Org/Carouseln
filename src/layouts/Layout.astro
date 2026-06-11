@@ -1,0 +1,109 @@
+---
+import '../styles/global.css';
+import { Navbar } from '../components/layout/Navbar';
+import { Footer } from '../components/layout/Footer';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  showNavbar?: boolean;
+  showFooter?: boolean;
+  /** Set true on authenticated app pages so crawlers do not index them */
+  noindex?: boolean;
+  /** Optional JSON-LD schema object injected into <head> as structured data */
+  schema?: object;
+}
+
+const {
+  title,
+  description = "Create custom carousels for Instagram, LinkedIn, and Facebook. Set up your brand style once, and Carouseln applies it to every slide automatically. Built for businesses and agencies.",
+  ogImage = "https://carouseln.com/og-image.png",
+  showNavbar = true,
+  showFooter = true,
+  noindex = false,
+  schema,
+} = Astro.props;
+
+const canonicalURL = new URL(
+  Astro.url.pathname,
+  Astro.site ?? "https://carouseln.com"
+).href;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Indexation -->
+    {noindex
+      ? <meta name="robots" content="noindex, nofollow" />
+      : <meta name="robots" content="index, follow" />}
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Primary meta -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content={canonicalURL} />
+    <meta property="og:title"       content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image"       content={ogImage} />
+    <meta property="og:site_name"   content="Carouseln" />
+    <meta property="og:locale"      content="en_IN" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image"       content={ogImage} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
+    <!-- Fonts: Space Grotesk is the UI font used on every page — load it
+         synchronously. The four slide-canvas fonts are only needed inside the
+         Generator, so they are loaded async via the media="print" swap trick
+         to avoid blocking LCP on the landing page.                          -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Primary layout font — synchronous -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Slide-canvas fonts — non-render-blocking -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesk:opsz,wght@12..96,300..800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@400;700;800&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesk:opsz,wght@12..96,300..800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@400;700;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- JSON-LD Structured Data (passed per page via schema prop) -->
+    {schema && (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    )}
+  </head>
+  <body class="bg-[var(--color-bg)] text-[var(--color-text-primary)] font-ui antialiased">
+    {showNavbar && <Navbar client:load />}
+    <main>
+      <slot />
+    </main>
+    {showFooter && <Footer />}
+  </body>
+</html>

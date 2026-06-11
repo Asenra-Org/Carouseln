@@ -1,0 +1,41 @@
+:root {
+  /* ============================================================
+     COMBO 6 — "Champagne × Noir"
+     Luxury fashion / lifestyle brand aesthetic
+     Champagne cream canvas, deep noir accents, soft gold
+     ============================================================ */
+
+  --color-bg:           #FAF7F2;   /* warm champagne cream canvas */
+  --color-surface:      #FFFFFF;
+  --color-surface-2:    #EAE4D9;
+  --color-border:       #0A0A0A;
+  --color-border-hover: #0A0A0A;
+
+  --color-gold:         #1E1E1E;   /* Noir primary accent */
+  --color-gold-dim:     #000000;
+  --color-gold-glow:    rgba(30, 30, 30, 0.85);
+  --color-pink:         #D4AF37;   /* Metallic Champagne Gold */
+  --color-cyan:         #8FBC8F;   /* Sage Green secondary */
+  --color-green:        #D4AF37;   /* Gold */
+
+  --color-text-primary:   #111111;
+  --color-text-secondary: #4A4A4A;
+  --color-text-muted:     #8C8C8C;
+
+  --color-success:      #8FBC8F;
+  --color-error:        #CD5C5C;
+  --color-warning:      #D4AF37;
+
+  --text-xs:    12px;
+  --text-sm:    14px;
+  --text-base:  16px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+  --text-3xl:   36px;
+  --text-4xl:   48px;
+  --text-5xl:   64px;
+  --text-display: 88px;
+
+  --spacing-base: 4px;
+}

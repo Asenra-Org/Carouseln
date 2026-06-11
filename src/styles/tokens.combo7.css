@@ -1,0 +1,41 @@
+:root {
+  /* ============================================================
+     COMBO 7 — "Obsidian × Sage"
+     Scandinavian minimalist luxury
+     Obsidian dark slate canvas, muted silver-sage & moss green accents
+     ============================================================ */
+
+  --color-bg:           #0B0D0F;   /* Obsidian near-black */
+  --color-surface:      #12161A;   /* deep slate surface */
+  --color-surface-2:    #1C2127;
+  --color-border:       #E2E8F0;   /* crisp light border on dark */
+  --color-border-hover: #FFFFFF;
+
+  --color-gold:         #A3B19B;   /* Muted Sage / Moss green */
+  --color-gold-dim:     #8F9F87;
+  --color-gold-glow:    rgba(163, 177, 155, 0.85);
+  --color-pink:         #E2E8F0;   /* Platinum silver */
+  --color-cyan:         #64748B;   /* Slate blue */
+  --color-green:        #A3B19B;
+
+  --color-text-primary:   #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted:     #475569;
+
+  --color-success:      #A3B19B;
+  --color-error:        #E2E8F0;
+  --color-warning:      #F59E0B;
+
+  --text-xs:    12px;
+  --text-sm:    14px;
+  --text-base:  16px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+  --text-3xl:   36px;
+  --text-4xl:   48px;
+  --text-5xl:   64px;
+  --text-display: 88px;
+
+  --spacing-base: 4px;
+}

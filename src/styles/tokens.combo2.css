@@ -1,0 +1,41 @@
+:root {
+  /* ============================================================
+     COMBO 2 — "Cream × Deep Violet"
+     Warm off-white canvas, lavender hero, deep purple accent
+     Editorial and premium — think Notion meets Figma
+     ============================================================ */
+
+  --color-bg:           #FAF7F2;   /* warm cream canvas          */
+  --color-surface:      #FFFFFF;
+  --color-surface-2:    #F0EBE3;
+  --color-border:       #1A1A1A;
+  --color-border-hover: #1A1A1A;
+
+  --color-gold:         #6B21A8;   /* Deep Violet — primary accent */
+  --color-gold-dim:     #5B1891;
+  --color-gold-glow:    rgba(107, 33, 168, 0.85);
+  --color-pink:         #D4B8FF;   /* Soft Lavender hero bg       */
+  --color-cyan:         #818CF8;   /* Periwinkle                  */
+  --color-green:        #D4B8FF;   /* Lavender for feature cards  */
+
+  --color-text-primary:   #1A1A1A;
+  --color-text-secondary: #4A4A4A;
+  --color-text-muted:     #9A9A9A;
+
+  --color-success:      #86EFAC;
+  --color-error:        #F87171;
+  --color-warning:      #FCD34D;
+
+  --text-xs:    12px;
+  --text-sm:    14px;
+  --text-base:  16px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+  --text-3xl:   36px;
+  --text-4xl:   48px;
+  --text-5xl:   64px;
+  --text-display: 88px;
+
+  --spacing-base: 4px;
+}

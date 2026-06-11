@@ -1,0 +1,228 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ArrowRight, CheckCircle, Sparkles, Image as ImageIcon, Layers, LayoutGrid, MonitorSmartphone, Palette } from 'lucide-react';
+import { Badge } from '../components/ui/Badge';
+
+const homepageSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Carouseln",
+  "description": "Create custom carousels for Instagram, LinkedIn, and Facebook. Set up your brand style once, and Carouseln applies it to every slide automatically.",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR",
+    "category": "Free"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Asenra",
+    "url": "https://asenra.in"
+  }
+};
+---
+
+<Layout title="Carouseln — AI Carousel Studio" schema={homepageSchema}>
+  
+  {/* HERO SECTION */}
+  <section class="relative min-h-screen flex items-center pt-32 overflow-hidden bg-[var(--color-gold)] border-b-4 border-black">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-50" />
+    
+    <div class="max-w-7xl mx-auto px-6 w-full py-24 flex flex-col md:flex-row items-center gap-16 relative z-10">
+      <div class="flex-1 flex flex-col items-start">
+        <Badge variant="neutral" class="mb-6 font-bold bg-white text-black border-2 border-black shadow-[4px_4px_0px_0px_#000] rounded-none px-4 py-2 text-sm uppercase tracking-widest">
+          Free AI Carousel Studio
+        </Badge>
+        <h1 class="text-[64px] md:text-[88px] font-bold text-black leading-[0.95] mb-8 tracking-tight uppercase" style="text-shadow: 4px 4px 0px #fff;">
+          Your brand.<br/>Every carousel.
+        </h1>
+        <p class="text-[20px] font-bold text-black leading-relaxed max-w-[480px] mb-10 bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000]">
+          Carouseln is a free AI Carousel Studio that saves your brand style once and applies it to every design. No manual formatting, no inconsistent templates.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row items-center gap-6 mb-6">
+          <a href="/signup" class="w-full sm:w-auto inline-flex items-center justify-center font-bold text-[16px] transition-all duration-100 bg-white text-black border-2 border-black rounded-none px-8 py-4 shadow-[6px_6px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000] active:translate-y-1 active:translate-x-1 active:shadow-[0px_0px_0px_0px_#000] uppercase">
+            Start for Free
+          </a>
+          <a href="#how-it-works" class="w-full sm:w-auto inline-flex items-center justify-center font-bold text-[16px] transition-all duration-100 bg-transparent text-black border-2 border-black rounded-none px-8 py-4 hover:bg-black hover:text-white uppercase">
+            See how it works <ArrowRight size={20} class="ml-2" />
+          </a>
+        </div>
+        
+        <p class="text-[14px] font-bold text-black bg-white/50 px-2 py-1 border-2 border-black inline-block mt-4">
+          No credit card required  ·  Trusted by 500+ brands
+        </p>
+      </div>
+      
+      {/* Hero Visual Mockup */}
+      <div class="flex-1 w-full max-w-lg hidden md:block">
+        <div class="bg-white border-4 border-black rounded-none shadow-[16px_16px_0px_0px_#000] overflow-hidden rotate-2 hover:rotate-0 transition-transform duration-300">
+          {/* Browser Chrome */}
+          <div class="h-12 border-b-4 border-black flex items-center px-4 gap-3 bg-[var(--color-pink)]">
+            <div class="w-4 h-4 rounded-none bg-white border-2 border-black" />
+            <div class="w-4 h-4 rounded-none bg-white border-2 border-black" />
+            <div class="w-4 h-4 rounded-none bg-white border-2 border-black" />
+          </div>
+          {/* Dashboard Preview */}
+          <div class="p-6 bg-white flex gap-6 h-[400px]">
+            {/* Sidebar Mock */}
+            <div class="w-1/4 h-full border-r-4 border-black flex flex-col gap-4 pr-4">
+              <div class="h-6 w-2/3 bg-black rounded-none" />
+              <div class="h-6 w-full bg-gray-300 rounded-none border-2 border-black" />
+              <div class="h-6 w-4/5 bg-gray-300 rounded-none border-2 border-black" />
+            </div>
+            {/* Content Mock */}
+            <div class="flex-1 flex flex-col gap-4">
+              <div class="h-8 w-1/3 bg-black rounded-none" />
+              <div class="flex-1 bg-[var(--color-green)] border-4 border-black rounded-none flex items-center justify-center p-4 shadow-[8px_8px_0px_0px_#000]">
+                <div class="w-full aspect-square bg-white border-4 border-black rounded-none flex items-center justify-center shadow-[4px_4px_0px_0px_#000]">
+                  <span class="font-bold text-black text-3xl uppercase tracking-wider">Acme Corp.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* PROBLEM/SOLUTION SECTION */}
+  <section class="py-24 border-b-4 border-black bg-[var(--color-pink)] text-black">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid md:grid-cols-2 gap-16">
+        <div class="bg-white border-4 border-black p-8 shadow-[12px_12px_0px_0px_#000]">
+          <h3 class="text-[32px] font-bold uppercase mb-8 border-b-4 border-black pb-4">The Problem</h3>
+          <ul class="flex flex-col gap-6">
+            {["You re-apply your brand every single session", "Templates look identical to your competitors", "AI tools forget your brand the moment you close the tab", "Output never looks premium enough to publish"].map(item => (
+              <li class="flex items-start gap-4 font-bold text-[18px]" key={item}>
+                <div class="mt-1 w-4 h-4 bg-black shrink-0 border-2 border-black" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="bg-[var(--color-green)] border-4 border-black p-8 shadow-[12px_12px_0px_0px_#000]">
+          <h3 class="text-[32px] font-bold uppercase mb-8 border-b-4 border-black pb-4">Carouseln</h3>
+          <ul class="flex flex-col gap-6">
+            {[
+              "Save your colors, logo, and fonts in one place",
+              "Layouts generated for your specific content",
+              "AI writes copy tailored to your brand's tone",
+              "Download high-quality PNGs ready to upload"
+            ].map(item => (
+              <li class="flex items-start gap-4 font-bold text-[18px]" key={item}>
+                <CheckCircle class="mt-1 text-black shrink-0" size={24} strokeWidth={3} />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* FEATURES SECTION */}
+  <section id="features" class="py-32 border-b-4 border-black bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-[56px] md:text-[80px] font-bold text-black mb-20 text-center uppercase leading-none tracking-tight">An AI Carousel Studio<br/>built around your brand</h2>
+      
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {[
+          { icon: Palette, title: "Brand Identity Store", desc: "Set your colors, logo, and tone once. Every slide you create stays consistent with your brand.", color: "bg-[var(--color-gold)]" },
+          { icon: Sparkles, title: "AI Content Generation", desc: "Describe your carousel idea in one line. The AI writes copy in your brand's tone.", color: "bg-[var(--color-pink)]" },
+          { icon: MonitorSmartphone, title: "Platform Preview", desc: "See your carousel inside accurate Instagram, LinkedIn, and Facebook frames before exporting.", color: "bg-[var(--color-green)]" },
+          { icon: LayoutGrid, title: "Crisp Rendering", desc: "Slides render as real web elements so they are sharp when exported as PNG.", color: "bg-[var(--color-surface)]" },
+          { icon: Layers, title: "Multiple Brands", desc: "Manage separate brand profiles. Switch between client brands in one click.", color: "bg-[var(--color-gold)]" },
+          { icon: ImageIcon, title: "Clean Export", desc: "Download all slides as high-resolution PNG files. Free and watermark-free.", color: "bg-[var(--color-pink)]" }
+        ].map(feature => (
+          <div key={feature.title} class={`${feature.color} border-4 border-black rounded-none p-8 hover:-translate-y-2 hover:shadow-[12px_12px_0px_0px_#000] shadow-[6px_6px_0px_0px_#000] transition-all duration-200`}>
+            <div class="w-16 h-16 bg-white border-4 border-black flex items-center justify-center mb-8 shadow-[4px_4px_0px_0px_#000]">
+              <feature.icon class="text-black" size={32} strokeWidth={3} />
+            </div>
+            <h3 class="text-[24px] font-bold text-black mb-4 uppercase">{feature.title}</h3>
+            <p class="text-[16px] font-bold text-black leading-relaxed">{feature.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* HOW IT WORKS */}
+  <section id="how-it-works" class="py-32 border-b-4 border-black bg-[var(--color-surface)] relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-[56px] md:text-[80px] font-bold text-black mb-24 text-center uppercase tracking-tight">How it works</h2>
+      
+      <div class="grid md:grid-cols-4 gap-8 relative">
+        {[
+          { num: "1", title: "Set Brand DNA", desc: "Upload logo, set colors & fonts." },
+          { num: "2", title: "Describe Topic", desc: "Type what your carousel is about." },
+          { num: "3", title: "AI Generates", desc: "Gemini writes copy in your tone." },
+          { num: "4", title: "Export & Post", desc: "Download PNGs and publish." }
+        ].map((step, i) => (
+          <div key={step.num} class="relative z-10 bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000] transform hover:rotate-3 transition-transform">
+            <div class="absolute -top-8 -left-8 w-16 h-16 bg-[var(--color-gold)] border-4 border-black flex items-center justify-center text-[32px] font-bold text-black shadow-[4px_4px_0px_0px_#000]">
+              {step.num}
+            </div>
+            <h3 class="text-[24px] font-bold text-black mb-4 uppercase mt-4">{step.title}</h3>
+            <p class="text-[16px] font-bold text-black leading-relaxed">{step.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* PRICING/CREDITS SECTION */}
+  <section id="pricing" class="py-32 border-b-4 border-black bg-[var(--color-green)]">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <Badge variant="neutral" class="mb-6 font-bold bg-white text-black border-2 border-black shadow-[4px_4px_0px_0px_#000] rounded-none px-4 py-2 text-sm uppercase tracking-widest">
+        100% Free & Open
+      </Badge>
+      <h2 class="text-[56px] md:text-[80px] font-bold text-black mb-12 uppercase tracking-tight leading-none">Free For Everyone</h2>
+      
+      <div class="max-w-2xl mx-auto bg-white border-4 border-black rounded-none p-8 md:p-12 shadow-[12px_12px_0px_0px_#000] text-left">
+        <h3 class="text-[32px] font-bold text-black mb-4 uppercase border-b-4 border-black pb-4 flex items-center justify-between">
+          <span>Free Plan</span>
+          <span class="text-[20px] bg-[var(--color-gold)] border-2 border-black px-3 py-1 font-black shadow-[2px_2px_0px_0px_#000]">₹0 FOREVER</span>
+        </h3>
+        <p class="text-[16px] font-bold text-gray-700 mb-8">
+          This tool is completely free for everyone. To make sure our API key stays active and stable without exhausting personal credits, we enforce a simple limit:
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {[
+            "1 carousel draft per day",
+            "All Google Fonts included",
+            "Unlimited layout edits",
+            "PNG exports with no watermarks",
+            "Instagram and LinkedIn preview frames",
+            "Unlimited saved brand profiles"
+          ].map(feature => (
+            <div class="flex items-center gap-3 text-[16px] font-bold text-black" key={feature}>
+              <CheckCircle size={20} class="text-black shrink-0" strokeWidth={3} /> {feature}
+            </div>
+          ))}
+        </div>
+        
+        <a href="/signup" class="w-full inline-flex items-center justify-center font-bold text-[18px] transition-all duration-100 bg-black text-white border-4 border-black rounded-none px-6 py-4 shadow-[6px_6px_0px_0px_var(--color-gold)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--color-gold)] uppercase">
+          Create Free Account Now
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {/* CTA SECTION */}
+  <section class="py-32 relative overflow-hidden bg-white border-b-4 border-black">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDBoMXY0MEgweiIgZmlsbD0iIzAwMCIgZmlsbC1vcGFjaXR5PSIwLjEiLz48cGF0aCBkPSJNMCAwaDQwdjFIMHoiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-50" />
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 bg-[var(--color-pink)] border-8 border-black p-16 shadow-[24px_24px_0px_0px_#000]">
+      <h2 class="text-[48px] md:text-[64px] font-bold text-black mb-12 uppercase leading-none tracking-tight">
+        Ready to create carousels that actually look like your brand?
+      </h2>
+      <a href="/signup" class="inline-flex items-center justify-center font-bold text-[24px] transition-all duration-100 bg-[var(--color-gold)] text-black border-4 border-black rounded-none px-12 py-6 shadow-[8px_8px_0px_0px_#000] hover:-translate-y-2 hover:shadow-[16px_16px_0px_0px_#000] active:translate-y-2 active:translate-x-2 active:shadow-[0px_0px_0px_0px_#000] uppercase">
+        Get started for free
+      </a>
+    </div>
+  </section>
+
+</Layout>

@@ -1,0 +1,41 @@
+:root {
+  /* ============================================================
+     COMBO 8 — "Sand × Terracotta"
+     Earthy organic luxury, editorial architecture vibes
+     Warm sand canvas, rich dark brown borders, terracotta-ochre accents
+     ============================================================ */
+
+  --color-bg:           #F7F2EC;   /* warm sand canvas */
+  --color-surface:      #FFFFFF;
+  --color-surface-2:    #ECE3D7;
+  --color-border:       #2D251E;   /* rich dark brown instead of black */
+  --color-border-hover: #1E1712;
+
+  --color-gold:         #C96F53;   /* Terracotta / Rust */
+  --color-gold-dim:     #B35E44;
+  --color-gold-glow:    rgba(201, 111, 83, 0.85);
+  --color-pink:         #D9A05B;   /* Warm Ochre */
+  --color-cyan:         #7C9D96;   /* Muted Eucalyptus green */
+  --color-green:        #C96F53;
+
+  --color-text-primary:   #2D251E;
+  --color-text-secondary: #6B5C52;
+  --color-text-muted:     #A6958B;
+
+  --color-success:      #7C9D96;
+  --color-error:        #C96F53;
+  --color-warning:      #D9A05B;
+
+  --text-xs:    12px;
+  --text-sm:    14px;
+  --text-base:  16px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+  --text-3xl:   36px;
+  --text-4xl:   48px;
+  --text-5xl:   64px;
+  --text-display: 88px;
+
+  --spacing-base: 4px;
+}

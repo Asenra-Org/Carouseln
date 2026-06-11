@@ -1,0 +1,41 @@
+:root {
+  /* ============================================================
+     COMBO 3 — "Graphite × Neon Coral"
+     Dark warm-gray background, orange-coral accent
+     Very modern design agency / editorial feel
+     ============================================================ */
+
+  --color-bg:           #1C1917;   /* dark graphite-brown canvas  */
+  --color-surface:      #292524;   /* dark card surface           */
+  --color-surface-2:    #3A3330;   /* slightly lifted surface     */
+  --color-border:       #E7E5E4;   /* light border on dark bg     */
+  --color-border-hover: #FFFFFF;
+
+  --color-gold:         #FF6B35;   /* Neon Coral / Orange         */
+  --color-gold-dim:     #E55A24;
+  --color-gold-glow:    rgba(255, 107, 53, 0.85);
+  --color-pink:         #FF6B35;   /* Same coral family           */
+  --color-cyan:         #38BDF8;   /* Ice Blue                    */
+  --color-green:        #4ADE80;   /* Neon Green                  */
+
+  --color-text-primary:   #F5F5F4;
+  --color-text-secondary: #A8A29E;
+  --color-text-muted:     #78716C;
+
+  --color-success:      #4ADE80;
+  --color-error:        #FF6B35;
+  --color-warning:      #FCD34D;
+
+  --text-xs:    12px;
+  --text-sm:    14px;
+  --text-base:  16px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+  --text-3xl:   36px;
+  --text-4xl:   48px;
+  --text-5xl:   64px;
+  --text-display: 88px;
+
+  --spacing-base: 4px;
+}

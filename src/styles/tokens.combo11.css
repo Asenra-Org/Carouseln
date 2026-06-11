@@ -1,0 +1,40 @@
+:root {
+  /* ============================================================
+     COMBO 11 — "Laser Tangerine × Electric Purple" (ZHATAK LIGHT/MED)
+     Loud neon orange bg, electric purple & cyan accents
+     ============================================================ */
+
+  --color-bg:           #FF5A09;   /* Loud electric tangerine canvas */
+  --color-surface:      #FFFFFF;
+  --color-surface-2:    #FFE8DC;
+  --color-border:       #000000;   /* heavy black borders */
+  --color-border-hover: #000000;
+
+  --color-gold:         #7000FF;   /* Intense Electric Purple primary accent */
+  --color-gold-dim:     #5C00D6;
+  --color-gold-glow:    rgba(112, 0, 255, 0.85);
+  --color-pink:         #00F0FF;   /* Electric Cyan */
+  --color-cyan:         #FFFF00;   /* Electric Yellow */
+  --color-green:        #39FF14;   /* Acid Green */
+
+  --color-text-primary:   #000000;
+  --color-text-secondary: #1A1A1A;
+  --color-text-muted:     #4A4A4A;
+
+  --color-success:      #39FF14;
+  --color-error:        #FF007F;
+  --color-warning:      #FFFF00;
+
+  --text-xs:    12px;
+  --text-sm:    14px;
+  --text-base:  16px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+  --text-3xl:   36px;
+  --text-4xl:   48px;
+  --text-5xl:   64px;
+  --text-display: 88px;
+
+  --spacing-base: 4px;
+}

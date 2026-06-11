@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { AppShell } from '../components/layout/AppShell';
+import { Dashboard } from '../components/app/Dashboard';
+---
+
+<Layout title="Dashboard — Carouseln" showNavbar={false} showFooter={false} noindex={true}>
+  <AppShell client:load currentPath="/dashboard">
+    <Dashboard client:load />
+  </AppShell>
+</Layout>
