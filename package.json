@@ -15,6 +15,7 @@
     "@astrojs/node": "^10.1.4",
     "@astrojs/react": "^5.0.7",
     "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^10.0.8",
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.3.0",
     "@types/dompurify": "^3.0.5",

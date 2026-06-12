@@ -1,10 +1,12 @@
-// @ts-check
 import { defineConfig } from 'astro/config';
-
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
+
+// Dynamic adapter selection: Vercel serverless in cloud, Node standalone locally
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
 
 // https://astro.build/config
 export default defineConfig({
@@ -27,7 +29,9 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
 
-  adapter: node({
+  adapter: isVercel ? vercel({
+    webAnalytics: { enabled: true }
+  }) : node({
     mode: 'standalone',
   }),
 });
