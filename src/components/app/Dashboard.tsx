@@ -155,14 +155,14 @@ export const Dashboard = () => {
   const totalSlides = carousels.reduce((acc, c) => acc + (c.slides?.length || 0), 0);
 
   return (
-    <div className="p-8 w-full max-w-[1200px] mx-auto">
+    <div className="p-4 md:p-8 w-full max-w-[1200px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 pt-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 pt-4 md:pt-8">
         <div>
           <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest mb-1">
             {activeProject?.name}
           </p>
-          <h1 className="text-[36px] font-black text-black uppercase leading-none">
+          <h1 className="text-[28px] md:text-[36px] font-black text-black uppercase leading-none">
             Welcome back, {firstName}
           </h1>
         </div>

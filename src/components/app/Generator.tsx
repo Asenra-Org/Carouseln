@@ -16,6 +16,7 @@ export const Generator = () => {
   const [slides, setSlides] = useState<any[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [activeProject, setActiveProject] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
 
   // Customization States
   const [fontFamily, setFontFamily] = useState("font-space");
@@ -268,38 +269,75 @@ export const Generator = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen bg-white">
       {/* Header */}
-      <header className="h-[70px] border-b-4 border-black flex items-center justify-between px-6 bg-[var(--color-bg)] z-10 shrink-0">
-        <div className="flex items-center gap-4">
-          <h1 className="text-[20px] font-bold text-black uppercase tracking-tight">
-            {loadedCarouselId ? "Edit Carousel" : "New Carousel"}
+      <header className="h-[70px] border-b-4 border-black flex items-center justify-between px-3 md:px-6 bg-[var(--color-bg)] z-10 shrink-0 gap-2">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <h1 className="text-[16px] md:text-[20px] font-bold text-black uppercase tracking-tight">
+            {loadedCarouselId ? "Edit" : "New"} <span className="hidden sm:inline">Carousel</span>
           </h1>
-          {slides.length > 0 && <Badge variant="default" className="bg-black text-white rounded-none border-none">Draft</Badge>}
+          {slides.length > 0 && <Badge variant="default" className="bg-black text-white rounded-none border-none text-[10px] md:text-xs">Draft</Badge>}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {loadedCarouselId && (
             <Button 
               variant="destructive" 
-              className="h-10 border-2 py-0 px-4" 
+              className="h-10 border-2 py-0 px-2 md:px-4 text-[12px] md:text-[14px]" 
               onClick={handleDelete} 
               isLoading={saving}
             >
-              <Trash2 size={16} className="mr-1.5" /> Delete
+              <Trash2 size={16} className="md:mr-1.5" /> <span className="hidden md:inline">Delete</span>
             </Button>
           )}
-          <Button variant="outline" className="h-10 border-2" onClick={handleSave} isLoading={saving} disabled={slides.length === 0}>
-            <Save size={16} className="mr-1.5" /> Save to Dashboard
+          <Button 
+            variant="outline" 
+            className="h-10 border-2 py-0 px-2 md:px-4 text-[12px] md:text-[14px]" 
+            onClick={handleSave} 
+            isLoading={saving} 
+            disabled={slides.length === 0}
+          >
+            <Save size={16} className="md:mr-1.5" /> 
+            <span className="hidden md:inline">Save</span>
+            <span className="hidden lg:inline"> to Dashboard</span>
           </Button>
-          <Button className="h-10" disabled={slides.length === 0 || saving} onClick={exportImages} isLoading={saving}>
-            <Download size={16} className="mr-1.5" /> Export Images (ZIP)
+          <Button 
+            className="h-10 py-0 px-2 md:px-4 text-[12px] md:text-[14px]" 
+            disabled={slides.length === 0 || saving} 
+            onClick={exportImages} 
+            isLoading={saving}
+          >
+            <Download size={16} className="md:mr-1.5" /> 
+            <span className="hidden md:inline">Export</span>
+            <span className="hidden lg:inline"> Images (ZIP)</span>
           </Button>
         </div>
       </header>
+
+      {/* Tab Switcher (Mobile Only) */}
+      <div className="md:hidden flex border-b-4 border-black bg-white shrink-0 z-10">
+        <button
+          onClick={() => setActiveTab("editor")}
+          className={`flex-1 py-3 text-center text-[13px] font-black uppercase border-r-2 border-black tracking-wider transition-colors ${
+            activeTab === "editor" ? "bg-[#FFB800] text-black" : "bg-white text-gray-500"
+          }`}
+        >
+          AI & Style
+        </button>
+        <button
+          onClick={() => setActiveTab("preview")}
+          className={`flex-1 py-3 text-center text-[13px] font-black uppercase border-l-2 border-black tracking-wider transition-colors ${
+            activeTab === "preview" ? "bg-[#FFB800] text-black" : "bg-white text-gray-500"
+          }`}
+        >
+          Preview ({slides.length} slides)
+        </button>
+      </div>
 
       {/* Main Workspace */}
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row bg-gray-100">
         
         {/* Left: Editor Panel */}
-        <div className="w-full md:w-[400px] lg:w-[450px] bg-white border-r-4 border-black flex flex-col z-10 overflow-y-auto shrink-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,0.1)]">
+        <div className={`w-full md:w-[400px] lg:w-[450px] bg-white md:border-r-4 border-black flex flex-col z-10 overflow-y-auto shrink-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,0.1)] ${
+          activeTab === "editor" ? "flex" : "hidden md:flex"
+        }`}>
           <div className="p-6 flex flex-col gap-8">
             
             {/* AI Generation Form */}
@@ -472,7 +510,9 @@ export const Generator = () => {
         </div>
 
         {/* Right: Preview Canvas */}
-        <div className="flex-1 overflow-hidden relative flex flex-col">
+        <div className={`flex-1 overflow-hidden relative flex flex-col ${
+          activeTab === "preview" ? "flex" : "hidden md:flex"
+        }`}>
           {/* Grid pattern background */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-20 pointer-events-none" />
 
@@ -502,10 +542,10 @@ export const Generator = () => {
               </p>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10 overflow-y-auto min-h-0">
+            <div className="flex-1 flex flex-col items-center justify-center p-3 md:p-8 relative z-10 overflow-y-auto min-h-0 w-full">
               
               {/* Carousel Rendering Frame */}
-              <div className="w-full max-w-[450px] flex justify-center transition-all duration-300 h-full py-4">
+              <div className="w-full max-w-[450px] flex justify-center items-center transition-all duration-300 h-full py-2 md:py-4">
                 {platformFrame === 'instagram' ? (
                   <div className="w-full bg-white border border-gray-300 rounded-md shadow-sm overflow-hidden flex flex-col my-auto max-h-full">
                     <div className="flex items-center p-3 border-b border-gray-200 gap-3 shrink-0">
@@ -518,11 +558,11 @@ export const Generator = () => {
                         id="carousel-preview-node"
                         className={`relative w-full overflow-hidden border-black transition-all duration-300 ${fontFamily} shrink-0`}
                         style={{ 
-                          aspectRatio: aspectRatio,
-                          borderWidth: '0px',
-                          borderRadius: '0px',
-                          boxShadow: 'none',
-                          backgroundColor: 'white'
+                           aspectRatio: aspectRatio,
+                           borderWidth: '0px',
+                           borderRadius: '0px',
+                           boxShadow: 'none',
+                           backgroundColor: 'white'
                         }}
                       >
                         <div 
@@ -642,25 +682,25 @@ export const Generator = () => {
               </div>
 
               {/* Navigation Controls */}
-              <div className="flex items-center gap-6 mt-12 shrink-0">
+              <div className="flex items-center gap-3 md:gap-6 mt-6 md:mt-12 shrink-0">
                 <Button
                   variant="outline"
-                  className="w-14 h-14 rounded-none p-0 border-4"
+                  className="w-10 h-10 md:w-14 md:h-14 rounded-none p-0 border-2 md:border-4"
                   onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
                   disabled={currentSlideIndex === 0}
                   aria-label="Previous slide"
                 >
-                  <ArrowLeft size={24} />
+                  <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
                 </Button>
                 
-                <div className="flex gap-3 bg-white border-4 border-black p-3 shadow-[4px_4px_0px_0px_#000]">
+                <div className="flex gap-1.5 md:gap-3 bg-white border-2 md:border-4 border-black p-2 md:p-3 shadow-[2px_2px_0px_0px_#000] md:shadow-[4px_4px_0px_0px_#000] max-w-[200px] sm:max-w-none overflow-x-auto">
                   {slides.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentSlideIndex(idx)}
                       aria-label={`Go to slide ${idx + 1}${idx === currentSlideIndex ? " (current)" : ""}`}
                       aria-current={idx === currentSlideIndex ? "true" : undefined}
-                      className={`w-4 h-4 border-2 border-black transition-all ${idx === currentSlideIndex ? 'scale-125' : 'bg-white hover:bg-gray-200'}`}
+                      className={`w-3 h-3 md:w-4 md:h-4 border border-black md:border-2 transition-all ${idx === currentSlideIndex ? 'scale-115' : 'bg-white hover:bg-gray-200'} shrink-0`}
                       style={{ backgroundColor: idx === currentSlideIndex ? primaryColor : undefined }}
                     />
                   ))}
@@ -668,12 +708,12 @@ export const Generator = () => {
 
                 <Button
                   variant="outline"
-                  className="w-14 h-14 rounded-none p-0 border-4"
+                  className="w-10 h-10 md:w-14 md:h-14 rounded-none p-0 border-2 md:border-4"
                   onClick={() => setCurrentSlideIndex(Math.min(slides.length - 1, currentSlideIndex + 1))}
                   disabled={currentSlideIndex === slides.length - 1}
                   aria-label="Next slide"
                 >
-                  <ArrowRight size={24} />
+                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                 </Button>
               </div>
             </div>

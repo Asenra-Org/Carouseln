@@ -33,5 +33,11 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // Rules for the 'cookie_consents' collection
+    match /cookie_consents/{consentId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
   }
 }

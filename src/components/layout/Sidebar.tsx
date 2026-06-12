@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, LayoutGrid, Settings2, LogOut, ChevronDown, Plus } from "lucide-react";
+import { Sparkles, LayoutGrid, Settings2, LogOut, ChevronDown, Plus, X } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { cn } from "../../lib/utils";
 import { auth, db } from "../../lib/firebase/client";
@@ -12,7 +12,15 @@ const NAV_ITEMS = [
   { label: "Settings", href: "/settings", icon: Settings2 },
 ];
 
-export const Sidebar = ({ currentPath = "/dashboard" }: { currentPath?: string }) => {
+export const Sidebar = ({
+  currentPath = "/dashboard",
+  isOpen = false,
+  onClose,
+}: {
+  currentPath?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
+}) => {
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
   const [user, setUser] = useState({ name: "", email: "", initials: "?", plan: "Free" });
   const [brand, setBrand] = useState<{ name: string; color: string } | null>(null);
@@ -50,12 +58,23 @@ export const Sidebar = ({ currentPath = "/dashboard" }: { currentPath?: string }
   };
 
   return (
-    <aside className="w-[240px] h-screen fixed top-0 left-0 border-r-4 border-black bg-white flex flex-col z-40">
-      <div className="p-5 border-b-4 border-black">
+    <aside className={cn(
+      "w-[240px] h-screen fixed top-0 left-0 border-r-4 border-black bg-white flex flex-col z-40 transition-transform duration-300 md:translate-x-0",
+      isOpen ? "translate-x-0" : "-translate-x-full"
+    )}>
+      <div className="p-5 border-b-4 border-black flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5 text-[20px] font-black text-black tracking-tight uppercase no-underline">
           <img src="/logo.png" alt="Carouseln Logo" className="w-8 h-8 border-2 border-black object-contain bg-white shrink-0" />
           Carouseln
         </a>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden border-2 border-black bg-[#FFB800] p-1.5 shadow-[2px_2px_0px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] cursor-pointer flex items-center justify-center"
+          >
+            <X size={16} strokeWidth={3} />
+          </button>
+        )}
       </div>
 
       {/* Brand Switcher */}
