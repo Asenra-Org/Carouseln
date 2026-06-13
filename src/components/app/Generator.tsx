@@ -566,7 +566,7 @@ export const Generator = () => {
                         }}
                       >
                         <div 
-                          className="w-full h-full"
+                          className="absolute inset-0 w-full h-full"
                           dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                         />
 
@@ -618,7 +618,7 @@ export const Generator = () => {
                         }}
                       >
                         <div 
-                          className="w-full h-full"
+                          className="absolute inset-0 w-full h-full"
                           dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                         />
 
@@ -662,7 +662,7 @@ export const Generator = () => {
                     }}
                   >
                     <div 
-                      className="w-full h-full"
+                      className="absolute inset-0 w-full h-full"
                       dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                     />
 
