@@ -155,14 +155,14 @@ export const Dashboard = () => {
   const totalSlides = carousels.reduce((acc, c) => acc + (c.slides?.length || 0), 0);
 
   return (
-    <div className="p-4 md:p-8 w-full max-w-[1200px] mx-auto">
+    <div className="p-4 lg:p-8 w-full max-w-[1200px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 pt-4 md:pt-8">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-4 pt-4 lg:pt-8">
         <div>
           <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest mb-1">
             {activeProject?.name}
           </p>
-          <h1 className="text-[28px] md:text-[36px] font-black text-black uppercase leading-none">
+          <h1 className="text-[28px] lg:text-[36px] font-black text-black uppercase leading-none">
             Welcome back, {firstName}
           </h1>
         </div>
@@ -176,7 +176,7 @@ export const Dashboard = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
         {[
           { icon: LayoutGrid, label: "Total Carousels", value: carousels.length, bg: "bg-white" },
           { icon: BarChart2, label: "Est. Impressions", value: (carousels.length * 1250).toLocaleString(), bg: "bg-[#FFB800]" },
@@ -210,7 +210,7 @@ export const Dashboard = () => {
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {carousels.slice(0, 9).map((carousel) => (
               <div
                 key={carousel.id}

@@ -309,9 +309,9 @@ export const Settings = () => {
   const sectionClass = "border-4 border-black bg-white shadow-[5px_5px_0px_0px_#000] p-6";
 
   return (
-    <div className="p-8 w-full max-w-[760px] mx-auto pb-20">
+    <div className="p-4 lg:p-8 w-full max-w-[760px] mx-auto pb-20">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-4 lg:pt-8">
         <div>
           <h1 className="text-[30px] font-black text-black uppercase leading-none">Brand Settings</h1>
           <p className="text-[13px] font-bold text-gray-500 mt-1">Manage your brand DNA</p>

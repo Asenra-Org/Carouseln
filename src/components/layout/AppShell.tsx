@@ -40,13 +40,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children, currentPath, noSid
           {/* Mobile backdrop */}
           {sidebarOpen && (
             <div 
-              className="md:hidden fixed inset-0 bg-black/50 z-30 transition-opacity" 
+              className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity" 
               onClick={() => setSidebarOpen(false)}
             />
           )}
 
           {/* Mobile top header bar */}
-          <header className="md:hidden fixed top-0 left-0 right-0 h-16 border-b-4 border-black bg-white flex items-center justify-between px-6 z-30">
+          <header className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b-4 border-black bg-white flex items-center justify-between px-6 z-30">
             <span className="text-[18px] font-black text-black uppercase tracking-tight">Carouseln</span>
             <button 
               onClick={() => setSidebarOpen(true)}
@@ -58,7 +58,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, currentPath, noSid
         </>
       )}
       
-      <main className={`flex-1 flex flex-col ${!noSidebar ? "md:ml-[240px] pt-16 md:pt-0" : ""}`}>
+      <main className={`flex-1 flex flex-col ${!noSidebar ? "lg:ml-[240px] pt-16 lg:pt-0" : ""}`}>
         {children}
       </main>
       

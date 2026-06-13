@@ -267,52 +267,52 @@ export const Generator = () => {
   const primaryColor = activeProject?.colorPrimary || "#C9A84C";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen bg-white">
+    <div className="flex flex-col h-[calc(100vh-64px)] lg:h-screen bg-white">
       {/* Header */}
-      <header className="h-[70px] border-b-4 border-black flex items-center justify-between px-3 md:px-6 bg-[var(--color-bg)] z-10 shrink-0 gap-2">
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <h1 className="text-[16px] md:text-[20px] font-bold text-black uppercase tracking-tight">
+      <header className="h-[70px] border-b-4 border-black flex items-center justify-between px-3 lg:px-6 bg-[var(--color-bg)] z-10 shrink-0 gap-2">
+        <div className="flex items-center gap-2 lg:gap-4 shrink-0">
+          <h1 className="text-[16px] lg:text-[20px] font-bold text-black uppercase tracking-tight">
             {loadedCarouselId ? "Edit" : "New"} <span className="hidden sm:inline">Carousel</span>
           </h1>
           {slides.length > 0 && <Badge variant="default" className="bg-black text-white rounded-none border-none text-[10px] md:text-xs">Draft</Badge>}
         </div>
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-2 lg:gap-3">
           {loadedCarouselId && (
             <Button 
               variant="destructive" 
-              className="h-10 border-2 py-0 px-2 md:px-4 text-[12px] md:text-[14px]" 
+              className="h-10 border-2 py-0 px-2 sm:px-4 text-[12px] sm:text-[14px]" 
               onClick={handleDelete} 
               isLoading={saving}
             >
-              <Trash2 size={16} className="md:mr-1.5" /> <span className="hidden md:inline">Delete</span>
+              <Trash2 size={16} className="sm:mr-1.5" /> <span className="hidden sm:inline">Delete</span>
             </Button>
           )}
           <Button 
             variant="outline" 
-            className="h-10 border-2 py-0 px-2 md:px-4 text-[12px] md:text-[14px]" 
+            className="h-10 border-2 py-0 px-2 sm:px-4 text-[12px] sm:text-[14px]" 
             onClick={handleSave} 
             isLoading={saving} 
             disabled={slides.length === 0}
           >
-            <Save size={16} className="md:mr-1.5" /> 
-            <span className="hidden md:inline">Save</span>
+            <Save size={16} className="sm:mr-1.5" /> 
+            <span className="hidden sm:inline">Save</span>
             <span className="hidden lg:inline"> to Dashboard</span>
           </Button>
           <Button 
-            className="h-10 py-0 px-2 md:px-4 text-[12px] md:text-[14px]" 
+            className="h-10 py-0 px-2 sm:px-4 text-[12px] sm:text-[14px]" 
             disabled={slides.length === 0 || saving} 
             onClick={exportImages} 
             isLoading={saving}
           >
-            <Download size={16} className="md:mr-1.5" /> 
-            <span className="hidden md:inline">Export</span>
+            <Download size={16} className="sm:mr-1.5" /> 
+            <span className="hidden sm:inline">Export</span>
             <span className="hidden lg:inline"> Images (ZIP)</span>
           </Button>
         </div>
       </header>
 
       {/* Tab Switcher (Mobile Only) */}
-      <div className="md:hidden flex border-b-4 border-black bg-white shrink-0 z-10">
+      <div className="lg:hidden flex border-b-4 border-black bg-white shrink-0 z-10">
         <button
           onClick={() => setActiveTab("editor")}
           className={`flex-1 py-3 text-center text-[13px] font-black uppercase border-r-2 border-black tracking-wider transition-colors ${
@@ -332,11 +332,11 @@ export const Generator = () => {
       </div>
 
       {/* Main Workspace */}
-      <div className="flex flex-1 overflow-hidden flex-col md:flex-row bg-gray-100">
+      <div className="flex flex-1 overflow-hidden flex-col lg:flex-row bg-gray-100">
         
         {/* Left: Editor Panel */}
-        <div className={`w-full md:w-[400px] lg:w-[450px] bg-white md:border-r-4 border-black flex flex-col z-10 overflow-y-auto shrink-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,0.1)] ${
-          activeTab === "editor" ? "flex" : "hidden md:flex"
+        <div className={`w-full lg:w-[450px] bg-white lg:border-r-4 border-black flex flex-col z-10 overflow-y-auto shrink-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,0.1)] ${
+          activeTab === "editor" ? "flex" : "hidden lg:flex"
         }`}>
           <div className="p-6 flex flex-col gap-8">
             
@@ -511,7 +511,7 @@ export const Generator = () => {
 
         {/* Right: Preview Canvas */}
         <div className={`flex-1 overflow-hidden relative flex flex-col ${
-          activeTab === "preview" ? "flex" : "hidden md:flex"
+          activeTab === "preview" ? "flex" : "hidden lg:flex"
         }`}>
           {/* Grid pattern background */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-20 pointer-events-none" />
