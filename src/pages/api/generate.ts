@@ -11,13 +11,72 @@ function getContrastColor(hex: string): string {
     cleanHex = cleanHex[0] + cleanHex[0] + cleanHex[1] + cleanHex[1] + cleanHex[2] + cleanHex[2];
   }
   if (cleanHex.length !== 6) return "#FFFFFF";
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
   if (isNaN(r) || isNaN(g) || isNaN(b)) return "#FFFFFF";
-  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-  return luminance > 180 ? "#111111" : "#FFFFFF";
+  
+  const fn = (c: number) => {
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  
+  const luminance = 0.2126 * fn(r) + 0.7152 * fn(g) + 0.0722 * fn(b);
+  return luminance > 0.179 ? "#000000" : "#FFFFFF";
 }
+
+function blendColors(hexBg: string, hexPrimary: string, ratio: number = 0.08): string {
+  const parseHex = (hex: string) => {
+    let clean = hex.replace("#", "").trim();
+    if (clean.length === 3) {
+      clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+    }
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return isNaN(r) || isNaN(g) || isNaN(b) ? null : { r, g, b };
+  };
+
+  const bg = parseHex(hexBg) || { r: 0, g: 0, b: 0 };
+  const prim = parseHex(hexPrimary) || { r: 255, g: 184, b: 0 };
+
+  const r = Math.round(bg.r * (1 - ratio) + prim.r * ratio);
+  const g = Math.round(bg.g * (1 - ratio) + prim.g * ratio);
+  const b = Math.round(bg.b * (1 - ratio) + prim.b * ratio);
+
+  const toHex = (c: number) => c.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+const FONT_PAIRINGS = [
+  {
+    name: "Editorial Luxury",
+    headingClass: "font-cormorant font-normal italic",
+    bodyClass: "font-outfit font-light",
+    headingDesc: "Elegant, high-end editorial serif. Headings should feel like a premium print magazine, often with italicized accents.",
+    bodyDesc: "Sleek, high-fashion sans-serif."
+  },
+  {
+    name: "Tech Minimalist",
+    headingClass: "font-space font-bold tracking-tight",
+    bodyClass: "font-outfit font-normal",
+    headingDesc: "Modern, clean, geometric sans-serif. High-contrast, precise, and tech-forward.",
+    bodyDesc: "Sleek, clean sans-serif."
+  },
+  {
+    name: "Bold Impact",
+    headingClass: "font-syne font-extrabold uppercase tracking-tight",
+    bodyClass: "font-space font-medium",
+    headingDesc: "Wide, heavy, highly expressive display font. Make headings punchy, short, and uppercase.",
+    bodyDesc: "Clean geometric sans-serif."
+  },
+  {
+    name: "Trendy Condense",
+    headingClass: "font-bricolage font-black tracking-tight",
+    bodyClass: "font-outfit font-light",
+    headingDesc: "Bold, condensed, high-impact sans-serif with a modern startup/agency aesthetic.",
+    bodyDesc: "Clean, light-weight sans-serif."
+  }
+];
 
 export const prerender = false;
 
@@ -42,17 +101,34 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const textColor = getContrastColor(colorBg);
-    const isLightBg = textColor === "#111111";
+    const isLightBg = textColor === "#000000";
     
-    // We define clean Tailwind classes to represent text contrast dynamically
-    const textPrimaryClass = isLightBg ? "text-neutral-900" : "text-white";
-    const textSecondaryClass = isLightBg ? "text-neutral-700" : "text-neutral-300";
-    const textMutedClass = isLightBg ? "text-neutral-500" : "text-neutral-400";
+    // We define clean Tailwind classes to represent text contrast dynamically using opacity
+    const textPrimaryClass = isLightBg ? "text-black" : "text-white";
+    const textSecondaryClass = isLightBg ? "text-black/80" : "text-white/80";
+    const textMutedClass = isLightBg ? "text-black/60" : "text-white/60";
     
     // Borders, badges, separator lines, and cards
-    const borderClass = isLightBg ? "border-neutral-900/20 bg-neutral-900/5 text-neutral-900" : "border-white/20 bg-white/5 text-white";
-    const cardClass = isLightBg ? "bg-neutral-900/[0.03] border-neutral-900/10" : "bg-white/[0.03] border-white/5";
-    const lineClass = isLightBg ? "border-neutral-900/10" : "border-white/10";
+    const borderClass = isLightBg ? "border-black/20 bg-black/5 text-black" : "border-white/20 bg-white/5 text-white";
+    const cardClass = isLightBg ? "bg-black/[0.03] border-black/10" : "bg-white/[0.03] border-white/5";
+    const lineClass = isLightBg ? "border-black/10" : "border-white/10";
+
+    // Randomly select a font pairing for this generation to ensure diversity
+    const fontPairing = FONT_PAIRINGS[Math.floor(Math.random() * FONT_PAIRINGS.length)];
+    
+    // Randomly choose background style
+    const bgStyleOptions = ["solid", "linear-gradient-vertical", "linear-gradient-diagonal", "radial-gradient"];
+    const bgStyle = bgStyleOptions[Math.floor(Math.random() * bgStyleOptions.length)];
+    
+    const blendedBg = blendColors(colorBg, colorPrimary, 0.08);
+    
+    const backgroundCssStyle = bgStyle === "solid"
+      ? `background-color: ${colorBg};`
+      : bgStyle === "linear-gradient-vertical"
+      ? `background: linear-gradient(180deg, ${colorBg} 0%, ${blendedBg} 100%);`
+      : bgStyle === "linear-gradient-diagonal"
+      ? `background: linear-gradient(135deg, ${colorBg} 0%, ${blendedBg} 100%);`
+      : `background: radial-gradient(circle at top left, ${colorBg} 0%, ${blendedBg} 100%);`;
 
     // Server-side only — never expose this key to the client bundle
     const apiKey = import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
@@ -122,32 +198,37 @@ Length: 5-7 slides.
 Aspect ratio: ${aspectRatio}
 
 --------------------------------------------------
-TYPOGRAPHY & FONT PAIRINGS:
-We have imported five fonts. You must use them semantically to create high-contrast pairings:
-- "font-space" (Space Grotesk): Modern, geometric, clean sans-serif.
-- "font-outfit" (Outfit): Sleek, high-fashion, premium sans-serif.
-- "font-syne" (Syne): Wide, expressive, heavy display font.
-- "font-bricolage" (Bricolage Grotesk): Trendy, bold, condensed sans-serif.
-- "font-cormorant" (Cormorant Garamond): High-end, luxury editorial serif.
+REQUIRED TYPOGRAPHY STYLE FOR THIS DECK (MANDATORY):
+We have imported five fonts. To ensure high variety across generations, this specific carousel MUST be designed with the "${fontPairing.name}" visual theme:
+- Heading / Title Style: Use classes "${fontPairing.headingClass}".
+  Description: ${fontPairing.headingDesc}
+- Body / Paragraph Style: Use classes "${fontPairing.bodyClass}".
+  Description: ${fontPairing.bodyDesc}
 
-For "Luxury" / "Editorial" / "Dark Premium" vibe:
-- Main Headings: Pair a bold sans-serif with a serif italic highlight. For example:
-  "<h2 class='font-outfit font-extrabold text-3xl leading-tight ${textPrimaryClass}'>SEO is how Google <span class='font-cormorant font-normal italic text-[var(--color-primary)]' style='color: ${colorPrimary}'>decides who gets seen.</span></h2>"
-- Secondary text, labels, and paragraph body: "font-outfit font-light ${textMutedClass}".
+Strictly use the Heading Style for all major headings, slide titles, large callouts, and statistics.
+Strictly use the Body/Paragraph Style for all descriptions, bullet points, labels, and small text.
+To make headings feel premium, you may wrap key words inside "<span class='text-[var(--color-primary)] font-semibold' style='color: ${colorPrimary}'>...</span>" or add subtle italic touches if using a serif font.
 
-For "Bold" / "Playful" vibe:
-- Headings: Heavy condensed uppercase. For example:
-  "<h2 class='font-syne font-extrabold text-3xl uppercase tracking-tight leading-none ${textPrimaryClass}'>INDIAN STARTUP<br/><span class='text-[var(--color-primary)]' style='color: ${colorPrimary}'>FRAUD PLAYBOOK.</span></h2>"
-- Body: "font-space font-medium ${textSecondaryClass}".
+--------------------------------------------------
+DYNAMIC COLOR CONTRAST RULES:
+To support any background color (including bright greens, yellows, etc.), use the following pre-compiled Tailwind classes:
+- Main Titles/Headers: "${textPrimaryClass}"
+- Body text & descriptions: "${textSecondaryClass}"
+- Muted labels, indicators, headers/footers: "${textMutedClass}"
+- Borders / Outlines: "${borderClass}" (use for badges, borders)
+- Highlight Cards: "${cardClass}" (use for container boxes)
+- Separator Lines: "${lineClass}" (use for hr/div lines)
+
+NEVER use flat grey colors like "text-neutral-400" or "text-gray-500". Use the exact classes provided above—they utilize HSL/RGB opacity to blend with the background color seamlessly!
 
 --------------------------------------------------
 CRITICAL LAYOUT RULES FOR PREMIUMNESS (NO OVERLAPPING & GENEROUS WHITESPACE):
 1. Root Container: Every slide HTML must have a root wrapper with:
-   - Fixed aspect ratio (w-full h-full p-8 flex flex-col justify-between overflow-hidden)
-   - Style: "background-color: ${colorBg}; color: ${textColor};"
+   - CSS classes: "relative w-full h-full p-8 flex flex-col justify-between overflow-hidden"
+   - Style: style="${backgroundCssStyle} color: ${textColor};"
 2. Header & Footer (Must be present on every slide for branding continuity):
    - TOP HEADER: A thin horizontal layout with:
-     - Left: A tiny uppercase tag (e.g., "SLIDE 01 — WHAT IS SEO" or "SAAS SECRETS").
+     - Left: A tiny uppercase category tag (e.g., "SLIDE 01 — WHAT IS SEO" or "SAAS SECRETS").
      - Right: Page indicator (e.g., "01 / 05") in tracked monospace font: "text-[10px] tracking-widest ${textMutedClass} font-mono".
    - BOTTOM FOOTER:
      - Left: Brand name in spaced-out letters: "<span class='text-[10px] uppercase font-bold tracking-[0.25em] ${textMutedClass}'>${brandName.toUpperCase()}</span>".
@@ -161,7 +242,7 @@ CRITICAL LAYOUT RULES FOR PREMIUMNESS (NO OVERLAPPING & GENEROUS WHITESPACE):
    - NEVER use "text-5xl", "text-6xl", "text-7xl", or larger for headings.
    - Maximum heading size on any slide is "text-3xl". Use "text-4xl" ONLY on the Hook slide if the title is 1-3 words max.
    - For long titles (4+ words) or titles containing long words (>8 characters like "CONVERTING", "LANDING"), you MUST restrict the heading font size to "text-2xl" or "text-3xl" max.
-   - "font-syne" is extremely wide. If you use "font-syne" or "font-bricolage", you MUST use "text-2xl" max for headings to prevent spilling over the slide border.
+   - "font-syne" is extremely wide. If you use "font-syne", you MUST use "text-2xl" max for headings to prevent spilling over the slide border.
    - Add the class "break-words" to all heading tags.
 
 --------------------------------------------------
@@ -174,13 +255,20 @@ ABSOLUTELY NO CHEAP EMOJIS:
   - Separators: Simple thin lines "<hr class='border-t ${lineClass} my-2 w-12' />" to divide sections.
 
 --------------------------------------------------
+LAYOUT DIVERSITY INSTRUCTIONS:
+Do NOT make every slide look identical in layout structure. Introduce layout variety:
+- Use split layouts (e.g. left column for title, right column for cards) for at least one content slide.
+- Use bento-grid layouts (e.g. grid with unequal columns) for the tip slide.
+- Introduce numbered lists with massive decorative numbers (e.g., "01", "02") in the Heading style.
+
+--------------------------------------------------
 SLIDE TEMPLATES:
 Generate a refined sequence of these specific slides:
-1. "hook" (Cover): A minimal, striking title slide. A large centered title with high-contrast font pairing (sans + serif italic), a category pill at the top, and bottom branding + swipe indicator. IMPORTANT: Keep the title inside a single, cohesive, block-aligned heading element (e.g. h1 or h2). Do NOT split different words of the title into separate, independent divs or float them around staggeringly. Use inline span tags for styling highlights (e.g. italicizing specific words). The entire title block must be aligned together (either left-aligned or centered) as a single element.
-2. "content" (Insight/Bento): A lesson slide. Tiny badge "LESSON 01 OF 04" -> Large uppercase heading -> Thin line separator -> 3-4 lines of punchy paragraph content -> A premium highlight card at the bottom.
-3. "stat" (Credibility): A giant stat slide. A huge colored statistic (e.g., "90%", "10X", "4.2M") in "text-6xl md:text-7xl font-extrabold leading-none font-syne" -> Under it, a short sentence explaining the metric -> A clean content box with structural details.
-4. "quote" (Thought Leadership): A beautiful centralized quote. Giant quotation mark -> Quote text in "font-cormorant font-medium italic text-lg leading-relaxed ${textSecondaryClass}" -> Author details in small tracking-wider font.
-5. "tip" (Actionable Value): A dark high-contrast box with a primary accent border. Contains a checklist or warning, using clean inline SVGs for checks/crosses (no emojis).
+1. "hook" (Cover): A minimal, striking title slide. A large centered title with high-contrast font pairing, a category pill at the top, and bottom branding + swipe indicator. Keep the title inside a single, cohesive, block-aligned heading element (e.g. h1 or h2). Do NOT split different words of the title into separate, independent divs or float them around.
+2. "content" (Insight/Bento): A lesson slide. Tiny badge -> Large uppercase heading -> Thin line separator -> 3-4 lines of punchy paragraph content -> A premium highlight card at the bottom.
+3. "stat" (Credibility): A giant stat slide. A huge colored statistic (e.g., "90%", "10X", "4.2M") in "text-6xl md:text-7xl font-extrabold leading-none" in the Heading style -> Under it, a short sentence explaining the metric -> A clean content box with structural details.
+4. "quote" (Thought Leadership): A beautiful centralized quote. Giant quotation mark -> Quote text in italic leading-relaxed text in the Heading Style -> Author details in small tracking-wider font.
+5. "tip" (Actionable Value): A beautiful box with a primary accent border. Contains a checklist or warning, using clean inline SVGs for checks/crosses (no emojis).
 6. "cta" (Call to Action): A minimalist end slide. Centralized header -> A beautifully simple outline button ("style='border-color: ${colorPrimary}'") -> Subtle prompt to save/share.
 
 --------------------------------------------------
@@ -188,7 +276,7 @@ OUTPUT FORMAT:
 Return the result STRICTLY as a JSON array of slide objects. Do not include markdown code block formatting (like \`\`\`json).
 Example output:
 [
-  { "type": "hook", "html": "<div class='relative w-full h-full p-8 flex flex-col justify-between overflow-hidden' style='background-color: ${colorBg}; color: ${textColor};'>...</div>" }
+  { "type": "hook", "html": "<div class='relative w-full h-full p-8 flex flex-col justify-between overflow-hidden' style='${backgroundCssStyle} color: ${textColor};'>...</div>" }
 ]
 
 Ensure the HTML matches the brand colors, uses the typography pairings, has large spacing, and looks incredibly premium.

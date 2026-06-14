@@ -59,15 +59,19 @@ export const OnboardingWizard = () => {
       }
       if (redirected.current) return; // ignore re-fires after our own write
       try {
-        const userDoc = await withTimeout(getDoc(doc(db, "users", user.uid)), 8000);
-        if (
-          userDoc.exists() &&
-          userDoc.data().activeProjectId &&
-          userDoc.data().onboardingCompleted === true
-        ) {
-          redirected.current = true;
-          window.location.href = "/dashboard";
-          return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNew = urlParams.get("new") === "true";
+        if (!isNew) {
+          const userDoc = await withTimeout(getDoc(doc(db, "users", user.uid)), 8000);
+          if (
+            userDoc.exists() &&
+            userDoc.data().activeProjectId &&
+            userDoc.data().onboardingCompleted === true
+          ) {
+            redirected.current = true;
+            window.location.href = "/dashboard";
+            return;
+          }
         }
       } catch (_) {}
       setChecking(false);

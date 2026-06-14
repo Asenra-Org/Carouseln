@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, LayoutGrid, Settings2, LogOut, ChevronDown, Plus, X } from "lucide-react";
+import { Sparkles, LayoutGrid, Settings2, LogOut, ChevronDown, Plus, X, Check } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { cn } from "../../lib/utils";
 import { auth, db } from "../../lib/firebase/client";
 import { signOut, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
@@ -24,6 +24,8 @@ export const Sidebar = ({
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
   const [user, setUser] = useState({ name: "", email: "", initials: "?", plan: "Free" });
   const [brand, setBrand] = useState<{ name: string; color: string } | null>(null);
+  const [brands, setBrands] = useState<{ id: string; name: string; color: string }[]>([]);
+  const [activeBrandId, setActiveBrandId] = useState<string>("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -37,7 +39,9 @@ export const Sidebar = ({
       try {
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists() && userDoc.data().activeProjectId) {
-          const projectDoc = await getDoc(doc(db, "projects", userDoc.data().activeProjectId));
+          const activeId = userDoc.data().activeProjectId;
+          setActiveBrandId(activeId);
+          const projectDoc = await getDoc(doc(db, "projects", activeId));
           if (projectDoc.exists()) {
             setBrand({
               name: projectDoc.data().name || "My Brand",
@@ -45,12 +49,39 @@ export const Sidebar = ({
             });
           }
         }
+
+        // Fetch all projects for this user
+        const q = query(collection(db, "projects"), where("userId", "==", currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        const fetchedBrands: { id: string; name: string; color: string }[] = [];
+        querySnapshot.forEach((doc) => {
+          fetchedBrands.push({
+            id: doc.id,
+            name: doc.data().name || "My Brand",
+            color: doc.data().colorPrimary || "#FFB800",
+          });
+        });
+        setBrands(fetchedBrands);
       } catch (e) {
         // silently fail — sidebar brand is non-critical
       }
     });
     return () => unsub();
   }, []);
+
+  const handleSwitchBrand = async (projectId: string) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        activeProjectId: projectId
+      });
+      setBrandDropdownOpen(false);
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to switch brand:", err);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -97,16 +128,29 @@ export const Sidebar = ({
           </button>
 
           {brandDropdownOpen && (
-            <div className="absolute top-full left-0 w-full mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] z-50">
-              {brand && (
-                <div className="flex items-center gap-2 p-2.5 bg-[#FFB800] border-b-2 border-black">
-                  <div className="w-4 h-4 border-2 border-black" style={{ backgroundColor: brand.color }} />
-                  <span className="text-[12px] font-black text-black uppercase">{brand.name}</span>
-                </div>
-              )}
+            <div className="absolute top-full left-0 w-full mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] z-50 max-h-60 overflow-y-auto">
+              {brands.map((b) => {
+                const isActive = b.id === activeBrandId;
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => handleSwitchBrand(b.id)}
+                    className={cn(
+                      "w-full flex items-center justify-between p-2.5 text-left transition-colors border-b-2 border-black last:border-b-0",
+                      isActive ? "bg-[#FFB800] text-black font-black" : "bg-white text-black hover:bg-gray-100"
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-4 h-4 border-2 border-black shrink-0" style={{ backgroundColor: b.color }} />
+                      <span className="text-[12px] uppercase truncate max-w-[120px]">{b.name}</span>
+                    </div>
+                    {isActive && <Check size={14} strokeWidth={3} className="shrink-0" />}
+                  </button>
+                );
+              })}
               <a
-                href="/onboarding"
-                className="w-full flex items-center gap-2 p-2.5 hover:bg-black hover:text-white text-black transition-colors"
+                href="/onboarding?new=true"
+                className="w-full flex items-center gap-2.5 p-2.5 hover:bg-black hover:text-white text-black transition-colors border-t-2 border-black"
                 onClick={() => setBrandDropdownOpen(false)}
               >
                 <Plus size={16} strokeWidth={3} />
