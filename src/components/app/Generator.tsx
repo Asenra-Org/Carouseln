@@ -17,6 +17,28 @@ export const Generator = () => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [activeProject, setActiveProject] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "Exit without saving?";
+        return "Exit without saving?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
+  useEffect(() => {
+    (window as any).isDirty = isDirty;
+    return () => {
+      (window as any).isDirty = false;
+    };
+  }, [isDirty]);
 
   // Customization States
   const [fontFamily, setFontFamily] = useState("font-space");
@@ -156,6 +178,7 @@ export const Generator = () => {
 
       setSlides(data.slides);
       setCurrentSlideIndex(0);
+      setIsDirty(true);
       toast.success(isTester ? "Carousel generated! (Unlimited Dev Mode)" : "Carousel generated! (1/1 today)");
     } catch (err: any) {
       console.error("Client generation error:", err);
@@ -181,6 +204,7 @@ export const Generator = () => {
           }),
           10000
         );
+        setIsDirty(false);
         toast.success("Carousel updated successfully!");
       } else {
         // Create new document
@@ -196,6 +220,7 @@ export const Generator = () => {
           }),
           10000
         );
+        setIsDirty(false);
         toast.success("Carousel saved successfully!");
       }
     } catch (err: any) {
@@ -211,6 +236,7 @@ export const Generator = () => {
       setSaving(true);
       try {
         await withTimeout(deleteDoc(doc(db, "carousels", loadedCarouselId)), 10000);
+        setIsDirty(false);
         toast.success("Carousel deleted successfully!");
         window.location.href = "/dashboard";
       } catch (err: any) {
@@ -500,6 +526,7 @@ export const Generator = () => {
                         const newSlides = [...slides];
                         newSlides[currentSlideIndex].html = e.target.value;
                         setSlides(newSlides);
+                        setIsDirty(true);
                       }}
                     />
                   </div>
@@ -553,7 +580,7 @@ export const Generator = () => {
                       <div className="font-bold text-sm leading-none flex-1">{activeProject?.name || 'brand_name'}</div>
                       <div className="flex gap-1"><div className="w-1 h-1 bg-black rounded-full"/><div className="w-1 h-1 bg-black rounded-full"/><div className="w-1 h-1 bg-black rounded-full"/></div>
                     </div>
-                    <div className="relative w-full flex justify-center bg-gray-100 flex-1 overflow-hidden">
+                    <div className="relative w-full flex justify-center bg-gray-100 flex-1 overflow-hidden p-4">
                       <div 
                         id="carousel-preview-node"
                         className={`relative w-full overflow-hidden border-black transition-all duration-300 ${fontFamily} shrink-0`}
@@ -569,18 +596,13 @@ export const Generator = () => {
                           className="absolute inset-0 w-full h-full"
                           dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                         />
+                      </div>
 
-                        {/* Pagination indicator overlay (if desired) */}
-                        <div 
-                          className="absolute bottom-6 right-6 text-[14px] font-bold uppercase tracking-widest px-2 py-1 pointer-events-none z-50 shadow-md"
-                          style={{ 
-                            backgroundColor: 'rgba(255,255,255,0.8)',
-                            color: 'black',
-                            borderRadius: '4px'
-                          }}
-                        >
-                          {currentSlideIndex + 1} / {slides.length}
-                        </div>
+                      {/* Pagination indicator overlay (placed outside preview node to avoid capturing during export) */}
+                      <div 
+                        className="absolute bottom-6 right-6 text-[14px] font-bold uppercase tracking-widest px-2 py-1 pointer-events-none z-50 shadow-md bg-white/80 text-black rounded"
+                      >
+                        {currentSlideIndex + 1} / {slides.length}
                       </div>
                     </div>
                     <div className="p-3 shrink-0">
@@ -605,7 +627,7 @@ export const Generator = () => {
                       <div className="flex gap-1"><div className="w-1 h-1 bg-gray-500 rounded-full"/><div className="w-1 h-1 bg-gray-500 rounded-full"/><div className="w-1 h-1 bg-gray-500 rounded-full"/></div>
                     </div>
                     <div className="px-4 pb-3 text-sm shrink-0">Check out our latest insights on this topic. 👇</div>
-                    <div className="relative w-full flex justify-center bg-gray-100 flex-1 overflow-hidden">
+                    <div className="relative w-full flex justify-center bg-gray-100 flex-1 overflow-hidden p-4">
                       <div 
                         id="carousel-preview-node"
                         className={`relative w-full overflow-hidden border-black transition-all duration-300 ${fontFamily} shrink-0`}
@@ -621,18 +643,13 @@ export const Generator = () => {
                           className="absolute inset-0 w-full h-full"
                           dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                         />
+                      </div>
 
-                        {/* Pagination indicator overlay (if desired) */}
-                        <div 
-                          className="absolute bottom-6 right-6 text-[14px] font-bold uppercase tracking-widest px-2 py-1 pointer-events-none z-50 shadow-md"
-                          style={{ 
-                            backgroundColor: 'rgba(255,255,255,0.8)',
-                            color: 'black',
-                            borderRadius: '4px'
-                          }}
-                        >
-                          {currentSlideIndex + 1} / {slides.length}
-                        </div>
+                      {/* Pagination indicator overlay (placed outside preview node to avoid capturing during export) */}
+                      <div 
+                        className="absolute bottom-6 right-6 text-[14px] font-bold uppercase tracking-widest px-2 py-1 pointer-events-none z-50 shadow-md bg-white/80 text-black rounded"
+                      >
+                        {currentSlideIndex + 1} / {slides.length}
                       </div>
                     </div>
                     <div className="p-3 border-t border-gray-200 shrink-0">
@@ -649,31 +666,28 @@ export const Generator = () => {
                     </div>
                   </div>
                 ) : (
-                  <div 
-                    id="carousel-preview-node"
-                    className={`relative w-full overflow-hidden border-black transition-all duration-300 ${fontFamily} shrink-0`}
-                    style={{ 
-                      aspectRatio: aspectRatio,
-                      borderWidth: borderWidth,
-                      borderRadius: borderRadius,
-                      boxShadow: shadowType === 'neo' ? `12px 12px 0px 0px ${primaryColor}` : 
-                                 shadowType === 'soft' ? '0px 10px 30px rgba(0,0,0,0.1)' : 'none',
-                      backgroundColor: 'white'
-                    }}
-                  >
+                  <div className="relative w-full flex justify-center bg-gray-100 flex-1 overflow-hidden p-4">
                     <div 
-                      className="absolute inset-0 w-full h-full"
-                      dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
-                    />
-
-                    {/* Pagination indicator overlay (if desired) */}
-                    <div 
-                      className="absolute bottom-6 right-6 text-[14px] font-bold uppercase tracking-widest px-2 py-1 pointer-events-none z-50 shadow-md"
+                      id="carousel-preview-node"
+                      className={`relative w-full overflow-hidden border-black transition-all duration-300 ${fontFamily} shrink-0`}
                       style={{ 
-                        backgroundColor: 'rgba(255,255,255,0.8)',
-                        color: 'black',
-                        borderRadius: '4px'
+                        aspectRatio: aspectRatio,
+                        borderWidth: borderWidth,
+                        borderRadius: borderRadius,
+                        boxShadow: shadowType === 'neo' ? `12px 12px 0px 0px ${primaryColor}` : 
+                                   shadowType === 'soft' ? '0px 10px 30px rgba(0,0,0,0.1)' : 'none',
+                        backgroundColor: 'white'
                       }}
+                    >
+                      <div 
+                        className="absolute inset-0 w-full h-full"
+                        dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
+                      />
+                    </div>
+
+                    {/* Pagination indicator overlay (placed outside preview node to avoid capturing during export) */}
+                    <div 
+                      className="absolute bottom-6 right-6 text-[14px] font-bold uppercase tracking-widest px-2 py-1 pointer-events-none z-50 shadow-md bg-white/80 text-black rounded"
                     >
                       {currentSlideIndex + 1} / {slides.length}
                     </div>

@@ -4,6 +4,28 @@ import { db, auth } from "../../lib/firebase/client";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
+const getCookie = (name: string): string | null => {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+  }
+  return null;
+};
+
+const setCookie = (name: string, value: string, days: number) => {
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    expires = "; expires=" + date.toUTCString();
+  }
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}${expires}; path=/; SameSite=Lax${secure}`;
+};
+
 export const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
@@ -12,13 +34,21 @@ export const CookieConsent = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    // Check if user already consented
-    const consent = localStorage.getItem("carouseln-cookie-consent");
-    if (!consent) {
-      // Delay slightly for a smoother entry
-      const timer = setTimeout(() => setVisible(true), 1500);
-      return () => clearTimeout(timer);
+    // Check if user already consented (check cookie first, fall back to localStorage)
+    const cookieConsent = getCookie("carouseln-cookie-consent");
+    const localConsent = localStorage.getItem("carouseln-cookie-consent");
+    
+    if (cookieConsent || localConsent) {
+      // If only localStorage has it, set the cookie as well so it is persistent
+      if (localConsent && !cookieConsent) {
+        setCookie("carouseln-cookie-consent", localConsent, 365);
+      }
+      return;
     }
+
+    // Delay slightly for a smoother entry
+    const timer = setTimeout(() => setVisible(true), 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -29,10 +59,12 @@ export const CookieConsent = () => {
   }, []);
 
   const saveConsent = async (choices: { necessary: boolean; analytics: boolean; marketing: boolean }) => {
-    localStorage.setItem("carouseln-cookie-consent", JSON.stringify({
+    const value = JSON.stringify({
       choices,
       timestamp: new Date().toISOString(),
-    }));
+    });
+    localStorage.setItem("carouseln-cookie-consent", value);
+    setCookie("carouseln-cookie-consent", value, 365);
     setVisible(false);
 
     try {

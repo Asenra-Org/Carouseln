@@ -47,36 +47,83 @@ function blendColors(hexBg: string, hexPrimary: string, ratio: number = 0.08): s
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-const FONT_PAIRINGS = [
-  {
-    name: "Editorial Luxury",
-    headingClass: "font-cormorant font-normal italic",
-    bodyClass: "font-outfit font-light",
-    headingDesc: "Elegant, high-end editorial serif. Headings should feel like a premium print magazine, often with italicized accents.",
-    bodyDesc: "Sleek, high-fashion sans-serif."
-  },
-  {
-    name: "Tech Minimalist",
-    headingClass: "font-space font-bold tracking-tight",
-    bodyClass: "font-outfit font-normal",
-    headingDesc: "Modern, clean, geometric sans-serif. High-contrast, precise, and tech-forward.",
-    bodyDesc: "Sleek, clean sans-serif."
-  },
-  {
-    name: "Bold Impact",
-    headingClass: "font-syne font-extrabold uppercase tracking-tight",
-    bodyClass: "font-space font-medium",
-    headingDesc: "Wide, heavy, highly expressive display font. Make headings punchy, short, and uppercase.",
-    bodyDesc: "Clean geometric sans-serif."
-  },
-  {
-    name: "Trendy Condense",
-    headingClass: "font-bricolage font-black tracking-tight",
-    bodyClass: "font-outfit font-light",
-    headingDesc: "Bold, condensed, high-impact sans-serif with a modern startup/agency aesthetic.",
-    bodyDesc: "Clean, light-weight sans-serif."
+function getStyleProfile(vibe: string) {
+  const v = vibe.toLowerCase().trim();
+  if (v === "luxury") {
+    return {
+      fontName: "Editorial Luxury",
+      headingClass: "font-cormorant font-normal italic",
+      bodyClass: "font-outfit font-light",
+      headingDesc: "Elegant, high-end editorial serif. Headings should feel like a premium print magazine, often with sentence-case italicized accents. NEVER use all-caps uppercase.",
+      bodyDesc: "Sleek, high-fashion sans-serif. Always use small sizes like text-[13px] md:text-sm.",
+      borderClass: "border border-black/10 rounded-none",
+      cardClass: "bg-black/[0.02] border border-black/5 rounded-none",
+      bgStyle: "radial-gradient",
+      layoutStyle: "Ultra-premium minimal editorial. Focus on asymmetrical layouts, huge margins, elegant italic subtitles, and clean single-column or split text."
+    };
+  } else if (v === "editorial") {
+    return {
+      fontName: "Editorial Luxury",
+      headingClass: "font-cormorant font-normal",
+      bodyClass: "font-outfit font-light",
+      headingDesc: "Sophisticated editorial serif. Headings should look like newspaper or magazine titles.",
+      bodyDesc: "Clean sans-serif. Always use small sizes like text-[13px] md:text-sm.",
+      borderClass: "border-b border-black/20 pb-2",
+      cardClass: "border-l-4 border-black/40 pl-4 py-2 bg-transparent rounded-none",
+      bgStyle: "linear-gradient-vertical",
+      layoutStyle: "Magazine editorial. Use two-column text splits (left column for title, right column for cards), large blockquotes, and fine horizontal divider lines."
+    };
+  } else if (v === "minimal") {
+    return {
+      fontName: "Tech Minimalist",
+      headingClass: "font-space font-bold tracking-tight uppercase",
+      bodyClass: "font-outfit font-normal",
+      headingDesc: "Modern, clean, geometric sans-serif. Keep headings short and sharp.",
+      bodyDesc: "Sleek, clean sans-serif. Always use small sizes like text-[13px] md:text-sm.",
+      borderClass: "border-none",
+      cardClass: "bg-black/[0.03] border-none rounded-none",
+      bgStyle: "solid",
+      layoutStyle: "Ultra-minimalist layout. No borders, no divider lines. Pure whitespace, tiny labels, and clean text blocks aligned in a single axis."
+    };
+  } else if (v === "bold") {
+    return {
+      fontName: "Bold Impact",
+      headingClass: "font-syne font-extrabold uppercase tracking-tight leading-none",
+      bodyClass: "font-space font-medium",
+      headingDesc: "Wide, heavy, highly expressive display font. Headings must be uppercase, loud, and short (3-5 words max).",
+      bodyDesc: "Clean geometric sans-serif. Always use text-sm.",
+      borderClass: "border-4 border-black",
+      cardClass: "border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
+      bgStyle: "linear-gradient-diagonal",
+      layoutStyle: "Neobrutalist style. Solid thick black borders, heavy uppercase titles, cards with sharp black offset shadows, raw blocks."
+    };
+  } else if (v === "playful") {
+    return {
+      fontName: "Trendy Condense",
+      headingClass: "font-bricolage font-black tracking-tight uppercase",
+      bodyClass: "font-outfit font-normal",
+      headingDesc: "Bold, condensed, modern startup sans-serif.",
+      bodyDesc: "Sleek, rounded feel sans-serif. Always use text-[13px] md:text-sm.",
+      borderClass: "border border-black/30 rounded-full px-3 py-1",
+      cardClass: "bg-black/[0.04] border border-black/10 rounded-2xl p-5",
+      bgStyle: "radial-gradient",
+      layoutStyle: "Modern friendly startup. Soft rounded-2xl corners on cards, badges with pill-shaped rounded borders, and playful color gradients."
+    };
+  } else {
+    // raw or default
+    return {
+      fontName: "Raw Industrial",
+      headingClass: "font-syne font-bold uppercase tracking-tight",
+      bodyClass: "font-space font-normal",
+      headingDesc: "Heavy industrial display font. Headings should feel structural.",
+      bodyDesc: "Monospace/geometric style sans-serif. Always use text-[13px] md:text-sm.",
+      borderClass: "border-2 border-black",
+      cardClass: "border-2 border-black bg-transparent rounded-none",
+      bgStyle: "linear-gradient-vertical",
+      layoutStyle: "Raw/code aesthetic. Use grid lines, monospace badges, thin divider lines, and code-like structures."
+    };
   }
-];
+}
 
 export const prerender = false;
 
@@ -107,19 +154,26 @@ export const POST: APIRoute = async ({ request }) => {
     const textPrimaryClass = isLightBg ? "text-black" : "text-white";
     const textSecondaryClass = isLightBg ? "text-black/80" : "text-white/80";
     const textMutedClass = isLightBg ? "text-black/60" : "text-white/60";
+
+    const profile = getStyleProfile(vibe);
     
-    // Borders, badges, separator lines, and cards
-    const borderClass = isLightBg ? "border-black/20 bg-black/5 text-black" : "border-white/20 bg-white/5 text-white";
-    const cardClass = isLightBg ? "bg-black/[0.03] border-black/10" : "bg-white/[0.03] border-white/5";
+    // Replace black/white placeholders in profile classes with the correct text colors
+    const replaceColorPlaceholders = (cls: string, isLight: boolean) => {
+      let result = cls
+        .replace(/black/g, isLight ? "black" : "white")
+        .replace(/white/g, isLight ? "white" : "black");
+      if (!isLight) {
+        result = result.replace(/rgba\(0,0,0,1\)/g, "rgba(255,255,255,1)");
+      }
+      return result;
+    };
+
+    const borderClass = replaceColorPlaceholders(profile.borderClass, isLightBg);
+    const cardClass = replaceColorPlaceholders(profile.cardClass, isLightBg);
     const lineClass = isLightBg ? "border-black/10" : "border-white/10";
 
-    // Randomly select a font pairing for this generation to ensure diversity
-    const fontPairing = FONT_PAIRINGS[Math.floor(Math.random() * FONT_PAIRINGS.length)];
-    
-    // Randomly choose background style
-    const bgStyleOptions = ["solid", "linear-gradient-vertical", "linear-gradient-diagonal", "radial-gradient"];
-    const bgStyle = bgStyleOptions[Math.floor(Math.random() * bgStyleOptions.length)];
-    
+    // Setup background gradient based on style profile
+    const bgStyle = profile.bgStyle;
     const blendedBg = blendColors(colorBg, colorPrimary, 0.08);
     
     const backgroundCssStyle = bgStyle === "solid"
@@ -178,7 +232,6 @@ export const POST: APIRoute = async ({ request }) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
     const prompt = `
 You are an elite graphic designer and frontend developer specializing in ultra-premium, high-converting LinkedIn and Instagram carousels.
 Your style is minimal, luxurious, and highly intellectual—similar to top agency-grade social media decks (e.g., dark layouts, fine lines, elegant typography pairings, and generous whitespace).
@@ -199,15 +252,20 @@ Aspect ratio: ${aspectRatio}
 
 --------------------------------------------------
 REQUIRED TYPOGRAPHY STYLE FOR THIS DECK (MANDATORY):
-We have imported five fonts. To ensure high variety across generations, this specific carousel MUST be designed with the "${fontPairing.name}" visual theme:
-- Heading / Title Style: Use classes "${fontPairing.headingClass}".
-  Description: ${fontPairing.headingDesc}
-- Body / Paragraph Style: Use classes "${fontPairing.bodyClass}".
-  Description: ${fontPairing.bodyDesc}
+We have imported five fonts. To ensure brand consistency across all slides, this carousel MUST strictly use the "${profile.fontName}" visual theme:
+- Heading / Title Style: Use classes "${profile.headingClass}".
+  Description: ${profile.headingDesc}
+- Body / Paragraph Style: Use classes "${profile.bodyClass}".
+  Description: ${profile.bodyDesc}
 
 Strictly use the Heading Style for all major headings, slide titles, large callouts, and statistics.
 Strictly use the Body/Paragraph Style for all descriptions, bullet points, labels, and small text.
 To make headings feel premium, you may wrap key words inside "<span class='text-[var(--color-primary)] font-semibold' style='color: ${colorPrimary}'>...</span>" or add subtle italic touches if using a serif font.
+
+--------------------------------------------------
+BRAND LAYOUT MOTIF / DESIGN LANGUAGE (MANDATORY):
+To align with the brand vibe "${vibe}", you MUST strictly adopt this design language:
+- Theme motif: ${profile.layoutStyle}
 
 --------------------------------------------------
 DYNAMIC COLOR CONTRAST RULES:
@@ -238,12 +296,19 @@ CRITICAL LAYOUT RULES FOR PREMIUMNESS (NO OVERLAPPING & GENEROUS WHITESPACE):
    - Use a middle block: "<div class='flex-1 flex flex-col justify-center py-6 gap-4'> ... </div>"
    - Never use "absolute" positioning for main text paragraphs.
 4. STRICT FONT BUDGET & OVERFLOW PREVENTION (CRITICAL):
-   - Every slide has a fixed aspect ratio and must never spill text outside its boundaries.
-   - NEVER use "text-5xl", "text-6xl", "text-7xl", or larger for headings.
-   - Maximum heading size on any slide is "text-3xl". Use "text-4xl" ONLY on the Hook slide if the title is 1-3 words max.
-   - For long titles (4+ words) or titles containing long words (>8 characters like "CONVERTING", "LANDING"), you MUST restrict the heading font size to "text-2xl" or "text-3xl" max.
-   - "font-syne" is extremely wide. If you use "font-syne", you MUST use "text-2xl" max for headings to prevent spilling over the slide border.
-   - Add the class "break-words" to all heading tags.
+   - Every slide has a fixed aspect ratio (width-to-height is ${aspectRatio}) and MUST NEVER spill text outside its boundaries or overlap elements.
+   - Word count and text budgets are extremely strict:
+     - Main Slide Heading: Maximum 6 words. Max 2 lines.
+     - Paragraph/Body Text: Maximum 25 words total. Max 3 lines.
+     - Highlight Card/Lesson Box Text: Maximum 15 words. Max 2 lines.
+   - Enforce these strict font size classes (never use custom larger classes):
+     - Main slide titles / headings: Use "text-xl md:text-2xl" (standard) or "text-lg md:text-xl" (if title is long).
+     - Hook (cover) title: Use "text-2xl md:text-3xl" (maximum).
+     - Paragraph/Body text: Use "text-[13px] md:text-sm leading-relaxed".
+     - Badges, tiny tags, footers, headers: Use "text-[11px] md:text-xs tracking-wider uppercase font-bold".
+   - Aspect Ratio Adaptation:
+     - The aspect ratio is "${aspectRatio}". If aspect ratio is "1:1" (Square), vertical height is very short! Keep all paragraphs to 2 lines max, heading to 1 line, and card content to 1 line.
+   - Add the class "break-words" to all text tags.
 
 --------------------------------------------------
 ABSOLUTELY NO CHEAP EMOJIS:

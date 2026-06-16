@@ -72,6 +72,11 @@ export const Sidebar = ({
   const handleSwitchBrand = async (projectId: string) => {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
+    if ((window as any).isDirty) {
+      if (!confirm("You have unsaved changes. Are you sure you want to switch brand and discard changes?")) {
+        return;
+      }
+    }
     try {
       await updateDoc(doc(db, "users", currentUser.uid), {
         activeProjectId: projectId
@@ -94,7 +99,17 @@ export const Sidebar = ({
       isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
       <div className="p-5 border-b-4 border-black flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2.5 text-[20px] font-black text-black tracking-tight uppercase no-underline">
+        <a 
+          href="/" 
+          onClick={(e) => {
+            if ((window as any).isDirty) {
+              if (!confirm("You have unsaved changes. Are you sure you want to exit without saving?")) {
+                e.preventDefault();
+              }
+            }
+          }}
+          className="flex items-center gap-2.5 text-[20px] font-black text-black tracking-tight uppercase no-underline"
+        >
           <img src="/logo.png" alt="Carouseln Logo" className="w-8 h-8 border-2 border-black object-contain bg-white shrink-0" />
           Carouseln
         </a>
@@ -169,6 +184,13 @@ export const Sidebar = ({
             <a
               key={item.label}
               href={item.href}
+              onClick={(e) => {
+                if ((window as any).isDirty) {
+                  if (!confirm("You have unsaved changes. Are you sure you want to exit without saving?")) {
+                    e.preventDefault();
+                  }
+                }
+              }}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 border-2 text-[13px] font-black uppercase transition-all duration-100",
                 isActive
@@ -197,7 +219,14 @@ export const Sidebar = ({
         </div>
 
         <button
-          onClick={handleLogout}
+          onClick={(e) => {
+            if ((window as any).isDirty) {
+              if (!confirm("You have unsaved changes. Are you sure you want to exit without saving?")) {
+                return;
+              }
+            }
+            handleLogout();
+          }}
           className="flex items-center gap-2 justify-center text-black hover:bg-red-500 hover:text-white border-2 border-black p-2 text-[12px] font-black uppercase transition-colors w-full"
         >
           <LogOut size={14} strokeWidth={3} />
