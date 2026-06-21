@@ -47,6 +47,53 @@ function blendColors(hexBg: string, hexPrimary: string, ratio: number = 0.08): s
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+async function resolveInitialImage(industry: string, topic: string, imageKeywords?: string): Promise<{ url: string | null; query: string }> {
+  try {
+    let queryTerm = "";
+    if (imageKeywords && imageKeywords.trim()) {
+      const tags = imageKeywords.split(/[\s,]+/).filter(Boolean);
+      queryTerm = tags.join(",");
+    } else {
+      queryTerm = `${industry || "abstract"},${topic.trim().replace(/[^a-zA-Z0-9\s,]/g, "").replace(/\s+/g, ",")}`;
+    }
+    const cleanQuery = queryTerm.substring(0, 80);
+    const searchUrl = `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanQuery)}`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(searchUrl, {
+      method: "HEAD",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      return { url: res.url, query: queryTerm.replace(/,/g, " ") };
+    }
+  } catch (err) {
+    console.error("Resolve initial image failed:", err);
+  }
+  return { url: null, query: `${industry} ${topic}`.trim() };
+}
+
+function getBgStyleForSlide(index: number): string {
+  const transforms = [
+    { scale: 1.25, rotate: 0, origin: "center", position: "center" },
+    { scale: 1.4, rotate: 5, origin: "top left", position: "top left" },
+    { scale: 1.35, rotate: -6, origin: "bottom right", position: "bottom right" },
+    { scale: 1.45, rotate: 10, origin: "center", position: "center" },
+    { scale: 1.3, rotate: -5, origin: "top right", position: "top right" },
+    { scale: 1.5, rotate: 8, origin: "bottom left", position: "bottom left" },
+    { scale: 1.28, rotate: -10, origin: "center", position: "center" },
+  ];
+  const t = transforms[index % transforms.length];
+  return `background-image: var(--bg-image); opacity: var(--bg-opacity, 0.08); background-size: cover; background-position: ${t.position}; transform: scale(${t.scale}) rotate(${t.rotate}deg); transform-origin: ${t.origin}; -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 80%); mask-image: radial-gradient(circle at center, black 30%, transparent 80%); position: absolute; inset: 0px; pointer-events: none; z-index: 0;`;
+}
+
 function getStyleProfile(vibe: string) {
   const v = vibe.toLowerCase().trim();
   if (v === "luxury") {
@@ -140,7 +187,8 @@ export const POST: APIRoute = async ({ request }) => {
       logoUrl = "",
       brandContext = "",
       website = "",
-      aspectRatio = "4/5"
+      aspectRatio = "4/5",
+      industry = ""
     } = body;
 
     if (!topic) {
@@ -338,11 +386,14 @@ Generate a refined sequence of these specific slides:
 
 --------------------------------------------------
 OUTPUT FORMAT:
-Return the result STRICTLY as a JSON array of slide objects. Do not include markdown code block formatting (like \`\`\`json).
-Example output:
-[
-  { "type": "hook", "html": "<div class='relative w-full h-full p-8 flex flex-col justify-between overflow-hidden' style='${backgroundCssStyle} color: ${textColor};'>...</div>" }
-]
+Return the result STRICTLY as a JSON object with the following structure:
+{
+  "imageKeywords": "strictly 1 or 2 comma-separated keywords chosen ONLY from this approved list: ['workspace', 'office', 'computer', 'servers', 'datacenter', 'analytics', 'finance', 'meeting', 'creative', 'design', 'minimal', 'healthcare', 'medical', 'education', 'book', 'writing']. Choose keywords that represent the physical or visual setting of the topic (e.g. for tech/coding use 'computer' or 'servers' or 'datacenter'; for business/agency use 'workspace' or 'office' or 'meeting'; for marketing use 'analytics'; for finance use 'finance'). DO NOT use any generic words outside this list (like 'infrastructure', 'architecture', 'platform', 'agency') as they fetch unrelated physical photos.",
+  "slides": [
+    { "type": "hook", "html": "<div class='relative w-full h-full p-8 flex flex-col justify-between overflow-hidden' style='${backgroundCssStyle} color: ${textColor};'>...</div>" }
+  ]
+}
+Do not include markdown code block formatting (like \`\`\`json).
 
 Ensure the HTML matches the brand colors, uses the typography pairings, has large spacing, and looks incredibly premium.
     `.trim();
@@ -383,9 +434,34 @@ Ensure the HTML matches the brand colors, uses the typography pairings, has larg
       cleanJson = cleanJson.substring(0, cleanJson.length - 3);
     }
 
-    const slides = JSON.parse(cleanJson.trim());
+    const parsed = JSON.parse(cleanJson.trim());
+    let rawSlides: any[] = [];
+    let imageKeywords = "";
 
-    return new Response(JSON.stringify({ slides }), {
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      rawSlides = parsed.slides || [];
+      imageKeywords = parsed.imageKeywords || "";
+    } else if (Array.isArray(parsed)) {
+      rawSlides = parsed;
+    }
+
+    // Resolve the initial background image using the keywords from Gemini
+    const { url: bgImageUrl, query: resolvedQuery } = await resolveInitialImage(industry, topic, imageKeywords);
+
+    // Inject the background div into each slide HTML
+    const processedSlides = rawSlides.map((slide: any, index: number) => {
+      if (slide.html) {
+        const rootDivEndIndex = slide.html.indexOf(">");
+        if (rootDivEndIndex !== -1) {
+          const bgStyle = getBgStyleForSlide(index);
+          const bgDiv = `<div style="${bgStyle}"></div>`;
+          slide.html = slide.html.substring(0, rootDivEndIndex + 1) + bgDiv + slide.html.substring(rootDivEndIndex + 1);
+        }
+      }
+      return slide;
+    });
+
+    return new Response(JSON.stringify({ slides: processedSlides, bgImageUrl, imageQuery: resolvedQuery }), {
       status: 200,
       headers: {
         "Content-Type": "application/json"

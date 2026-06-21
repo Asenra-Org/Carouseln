@@ -18,6 +18,10 @@ export const Generator = () => {
   const [activeProject, setActiveProject] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
   const [isDirty, setIsDirty] = useState(false);
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
+  const [bgOpacity, setBgOpacity] = useState<number>(0.08);
+  const [imageQuery, setImageQuery] = useState<string>("");
+  const [imageLoading, setImageLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -74,11 +78,13 @@ export const Generator = () => {
         return;
       }
       try {
+        let activeProjData: any = null;
         const userDoc = await withTimeout(getDoc(doc(db, "users", user.uid)), 8000);
         if (userDoc.exists() && userDoc.data().activeProjectId) {
           const projectDoc = await withTimeout(getDoc(doc(db, "projects", userDoc.data().activeProjectId)), 8000);
           if (projectDoc.exists()) {
-            setActiveProject({ id: projectDoc.id, ...projectDoc.data() });
+            activeProjData = { id: projectDoc.id, ...projectDoc.data() };
+            setActiveProject(activeProjData);
           }
         }
 
@@ -94,6 +100,9 @@ export const Generator = () => {
               setLoadedCarouselId(carouselDoc.id);
               setTopic(data.title || "");
               setSlides(data.slides || []);
+              setBgImageUrl(data.bgImageUrl || null);
+              setBgOpacity(data.bgOpacity !== undefined ? data.bgOpacity : 0.05);
+              setImageQuery(data.imageQuery || `${activeProjData?.industry || ""} ${data.title || ""}`.trim());
               setCurrentSlideIndex(0);
               toast.success("Loaded saved carousel!");
             } else {
@@ -112,6 +121,12 @@ export const Generator = () => {
     });
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    if (!imageQuery && activeProject) {
+      setImageQuery(`${activeProject.industry || ""} ${topic}`.trim());
+    }
+  }, [activeProject, topic]);
 
   const handleGenerate = async () => {
     if (!topic) {
@@ -156,6 +171,7 @@ export const Generator = () => {
           brandContext: activeProject?.brandContext || "",
           website: activeProject?.website || "",
           aspectRatio: aspectRatio,
+          industry: activeProject?.industry || "",
         }),
       });
 
@@ -177,6 +193,10 @@ export const Generator = () => {
       );
 
       setSlides(data.slides);
+      setBgImageUrl(data.bgImageUrl || null);
+      if (data.imageQuery) {
+        setImageQuery(data.imageQuery);
+      }
       setCurrentSlideIndex(0);
       setIsDirty(true);
       toast.success(isTester ? "Carousel generated! (Unlimited Dev Mode)" : "Carousel generated! (1/1 today)");
@@ -200,6 +220,9 @@ export const Generator = () => {
           updateDoc(doc(db, "carousels", loadedCarouselId), {
             title: topic,
             slides,
+            bgImageUrl,
+            bgOpacity,
+            imageQuery,
             updatedAt: serverTimestamp()
           }),
           10000
@@ -214,6 +237,9 @@ export const Generator = () => {
             projectId: activeProject ? activeProject.id : null,
             title: topic,
             slides,
+            bgImageUrl,
+            bgOpacity,
+            imageQuery,
             status: "complete",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
@@ -504,6 +530,103 @@ export const Generator = () => {
 
             <hr className="border-t-4 border-black" />
 
+            {/* Background Photo Section */}
+            <div className="flex flex-col gap-4 animate-in fade-in">
+              <h2 className="text-[16px] font-bold text-black uppercase">
+                Background Photo
+              </h2>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="bg-image-query" className="text-[12px] font-bold text-gray-600 uppercase">Search Keywords</label>
+                  <div className="flex gap-2">
+                    <input
+                      id="bg-image-query"
+                      type="text"
+                      className="flex-1 bg-white border-4 border-black rounded-none px-3 py-1 text-[14px] font-bold text-black focus:outline-none"
+                      placeholder="e.g. tech, minimal office..."
+                      value={imageQuery}
+                      onChange={(e) => setImageQuery(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      className="h-10 border-2 py-0 px-3 text-[13px]"
+                      onClick={async () => {
+                        if (!imageQuery) {
+                          toast.error("Please enter search keywords first");
+                          return;
+                        }
+                        setImageLoading(true);
+                        try {
+                          const res = await fetch("/api/resolve-image", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ query: imageQuery }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || "Failed to search");
+                          setBgImageUrl(data.imageUrl);
+                          setIsDirty(true);
+                          toast.success("Background image updated!");
+                        } catch (err: any) {
+                          toast.error(err.message || "Failed to fetch image");
+                        } finally {
+                          setImageLoading(false);
+                        }
+                      }}
+                      isLoading={imageLoading}
+                      disabled={slides.length === 0}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-gray-600 uppercase">Image Status</span>
+                    {bgImageUrl ? (
+                      <button
+                        onClick={() => {
+                          setBgImageUrl(null);
+                          setIsDirty(true);
+                          toast.success("Background image removed");
+                        }}
+                        className="text-[12px] font-bold text-red-500 hover:underline uppercase"
+                      >
+                        Remove Image
+                      </button>
+                    ) : (
+                      <span className="text-[12px] font-bold text-gray-400 uppercase">No Image Set</span>
+                    )}
+                  </div>
+                  
+                  {bgImageUrl && (
+                    <div className="flex flex-col gap-1.5 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="bg-image-opacity" className="text-[12px] font-bold text-gray-600 uppercase">Opacity ({Math.round(bgOpacity * 100)}%)</label>
+                      </div>
+                      <input
+                        id="bg-image-opacity"
+                        type="range"
+                        min="0"
+                        max="0.40"
+                        step="0.01"
+                        className="w-full accent-black cursor-pointer"
+                        value={bgOpacity}
+                        onChange={(e) => {
+                          setBgOpacity(parseFloat(e.target.value));
+                          setIsDirty(true);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-t-4 border-black" />
+
             {/* Slide Editor (visible if slides exist) */}
             {slides.length > 0 && (
               <div className="flex flex-col gap-6 animate-in fade-in">
@@ -594,6 +717,10 @@ export const Generator = () => {
                       >
                         <div 
                           className="absolute inset-0 w-full h-full"
+                          style={{
+                            "--bg-image": bgImageUrl ? `url('${bgImageUrl}')` : 'none',
+                            "--bg-opacity": bgOpacity,
+                          } as React.CSSProperties}
                           dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                         />
                       </div>
@@ -641,6 +768,10 @@ export const Generator = () => {
                       >
                         <div 
                           className="absolute inset-0 w-full h-full"
+                          style={{
+                            "--bg-image": bgImageUrl ? `url('${bgImageUrl}')` : 'none',
+                            "--bg-opacity": bgOpacity,
+                          } as React.CSSProperties}
                           dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                         />
                       </div>
@@ -681,6 +812,10 @@ export const Generator = () => {
                     >
                       <div 
                         className="absolute inset-0 w-full h-full"
+                        style={{
+                          "--bg-image": bgImageUrl ? `url('${bgImageUrl}')` : 'none',
+                          "--bg-opacity": bgOpacity,
+                        } as React.CSSProperties}
                         dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
                       />
                     </div>
