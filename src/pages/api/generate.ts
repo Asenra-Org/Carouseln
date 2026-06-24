@@ -48,22 +48,21 @@ function blendColors(hexBg: string, hexPrimary: string, ratio: number = 0.08): s
 }
 
 async function resolveInitialImage(industry: string, topic: string, imageKeywords?: string): Promise<{ url: string | null; query: string }> {
+  let queryTerm = "";
   try {
-    let queryTerm = "";
     if (imageKeywords && imageKeywords.trim()) {
       const tags = imageKeywords.split(/[\s,]+/).filter(Boolean);
-      queryTerm = tags.join(",");
+      queryTerm = tags.join(" ");
     } else {
-      queryTerm = `${industry || "abstract"},${topic.trim().replace(/[^a-zA-Z0-9\s,]/g, "").replace(/\s+/g, ",")}`;
+      queryTerm = `${industry || ""} ${topic.trim().replace(/[^a-zA-Z0-9\s]/g, "")}`.trim();
     }
-    const cleanQuery = queryTerm.substring(0, 80);
-    const searchUrl = `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanQuery)}`;
+    const cleanQuery = encodeURIComponent(queryTerm.substring(0, 80));
+    const searchUrl = `https://unsplash.com/napi/search/photos?query=${cleanQuery}&per_page=10`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(searchUrl, {
-      method: "HEAD",
       signal: controller.signal,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -72,12 +71,20 @@ async function resolveInitialImage(industry: string, topic: string, imageKeyword
     clearTimeout(timeout);
 
     if (res.ok) {
-      return { url: res.url, query: queryTerm.replace(/,/g, " ") };
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const photo = data.results[0];
+        const rawUrl = photo.urls?.raw || photo.urls?.regular;
+        if (rawUrl) {
+          const finalUrl = `${rawUrl.split('?')[0]}?q=80&w=1080&auto=format&fit=crop`;
+          return { url: finalUrl, query: queryTerm };
+        }
+      }
     }
   } catch (err) {
     console.error("Resolve initial image failed:", err);
   }
-  return { url: null, query: `${industry} ${topic}`.trim() };
+  return { url: null, query: queryTerm || `${industry} ${topic}`.trim() };
 }
 
 function getBgStyleForSlide(index: number): string {
@@ -328,35 +335,45 @@ To support any background color (including bright greens, yellows, etc.), use th
 NEVER use flat grey colors like "text-neutral-400" or "text-gray-500". Use the exact classes provided above—they utilize HSL/RGB opacity to blend with the background color seamlessly!
 
 --------------------------------------------------
-CRITICAL LAYOUT RULES FOR PREMIUMNESS (NO OVERLAPPING & GENEROUS WHITESPACE):
-1. Root Container: Every slide HTML must have a root wrapper with:
-   - CSS classes: "relative w-full h-full p-8 flex flex-col justify-between overflow-hidden"
-   - Style: style="${backgroundCssStyle} color: ${textColor};"
-2. Header & Footer (Must be present on every slide for branding continuity):
-   - TOP HEADER: A thin horizontal layout with:
-     - Left: A tiny uppercase category tag (e.g., "SLIDE 01 — WHAT IS SEO" or "SAAS SECRETS").
-     - Right: Page indicator (e.g., "01 / 05") in tracked monospace font: "text-[10px] tracking-widest ${textMutedClass} font-mono".
-   - BOTTOM FOOTER:
-     - Left: Brand name in spaced-out letters: "<span class='text-[10px] uppercase font-bold tracking-[0.25em] ${textMutedClass}'>${brandName.toUpperCase()}</span>".
-     - Right: Website URL (or brand handle) in the same tracked style: "<span class='text-[10px] uppercase font-bold tracking-[0.2em] ${textMutedClass}'>${website || `@${brandName.replace(/\s+/g, '').toLowerCase()}`}</span>".
-     - Center (Only on Hook slide): Subtle swipe indicator in the middle: "<span class='text-[9px] uppercase tracking-widest ${textMutedClass}'>SWIPE — IF YOU DARE</span>" or "SWIPE TO LEARN →".
-3. Vertical Flow: Keep the middle content area perfectly centered.
-   - Use a middle block: "<div class='flex-1 flex flex-col justify-center py-6 gap-4'> ... </div>"
-   - Never use "absolute" positioning for main text paragraphs.
-4. STRICT FONT BUDGET & OVERFLOW PREVENTION (CRITICAL):
-   - Every slide has a fixed aspect ratio (width-to-height is ${aspectRatio}) and MUST NEVER spill text outside its boundaries or overlap elements.
-   - Word count and text budgets are extremely strict:
-     - Main Slide Heading: Maximum 6 words. Max 2 lines.
-     - Paragraph/Body Text: Maximum 25 words total. Max 3 lines.
-     - Highlight Card/Lesson Box Text: Maximum 15 words. Max 2 lines.
-   - Enforce these strict font size classes (never use custom larger classes):
-     - Main slide titles / headings: Use "text-xl md:text-2xl" (standard) or "text-lg md:text-xl" (if title is long).
-     - Hook (cover) title: Use "text-2xl md:text-3xl" (maximum).
-     - Paragraph/Body text: Use "text-[13px] md:text-sm leading-relaxed".
-     - Badges, tiny tags, footers, headers: Use "text-[11px] md:text-xs tracking-wider uppercase font-bold".
-   - Aspect Ratio Adaptation:
-     - The aspect ratio is "${aspectRatio}". If aspect ratio is "1:1" (Square), vertical height is very short! Keep all paragraphs to 2 lines max, heading to 1 line, and card content to 1 line.
-   - Add the class "break-words" to all text tags.
+CRITICAL LAYOUT RULES FOR PREMIUMNESS (NO OVERLAPPING, EXACT SKELETON ON EVERY SLIDE):
+To prevent elements from overlapping headers/footers on mobile, and to keep branding elements positioned at EXACTLY the same coordinates across ALL slides:
+
+1. EVERY single slide HTML code MUST strictly adhere to this exact 3-tier layout skeleton. You are forbidden to deviate from this skeleton structure:
+   <div class="relative w-full h-full p-8 flex flex-col justify-between overflow-hidden" style="${backgroundCssStyle} color: ${textColor};">
+     <!-- TOP HEADER (Thin horizontal bar, shrink-0) -->
+     <div class="w-full flex justify-between items-center shrink-0 border-b ${borderClass} pb-2 z-10">
+       <span class="text-[10px] uppercase font-black tracking-widest ${textPrimaryClass}">[Category Name, e.g. PERFORMANCE METRICS]</span>
+       <span class="text-[10px] tracking-widest ${textMutedClass} font-mono">[Slide number, e.g. 02 / 06]</span>
+     </div>
+
+     <!-- MIDDLE CONTENT BLOCK (flex-1, min-h-0, overflow-hidden) -->
+     <div class="flex-1 flex flex-col justify-center min-h-0 overflow-hidden py-4 gap-3 z-10">
+       <!-- All slide headings, body text, lists, quotes, and buttons MUST reside strictly inside this block. -->
+     </div>
+
+     <!-- BOTTOM FOOTER (Thin horizontal bar, shrink-0) -->
+     <div class="w-full flex justify-between items-center shrink-0 border-t ${borderClass} pt-2 z-10">
+       <span class="text-[10px] uppercase font-bold tracking-[0.25em] ${textMutedClass}">${brandName.toUpperCase()}</span>
+       <span class="text-[10px] uppercase font-bold tracking-[0.2em] ${textMutedClass}">${website.toUpperCase() || `@${brandName.toLowerCase()}`}</span>
+     </div>
+   </div>
+
+2. Branding Consistency:
+   - The brand name logo ("${brandName.toUpperCase()}") and website/handle must ALWAYS reside strictly in the Bottom Footer, on the left and right respectively.
+   - You are strictly forbidden from placing the logo or website at the top of the slide, or changing their layouts from slide to slide. They must align perfectly across the deck.
+
+3. Strict Font Budget & Overflow Prevention (Mandatory):
+   - Every slide has a fixed aspect ratio (${aspectRatio}). On mobile, vertical height is extremely short.
+   - Content inside the Middle Content Block must be kept short to prevent vertical overflow.
+   - Text budget limits:
+     - Main Slide Title: Max 5 words (Max 2 lines).
+     - Body Paragraph Text: Max 20 words (Max 3 lines).
+     - Card / Sub-content Text: Max 12 words (Max 2 lines).
+   - Use these exact sizing classes:
+     - Slide titles: Use "text-lg md:text-xl font-extrabold leading-tight".
+     - Hook (cover) title: Use "text-xl md:text-2xl font-black leading-tight".
+     - Paragraph/Body: Use "text-[12px] md:text-[13px] leading-relaxed".
+     - Numbered list headers: Use "text-[13px] md:text-sm font-bold".
 
 --------------------------------------------------
 ABSOLUTELY NO CHEAP EMOJIS:

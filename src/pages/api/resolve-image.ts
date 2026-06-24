@@ -9,16 +9,13 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "Query is required" }), { status: 400 });
     }
 
-    // Clean query and search loremflickr.com
-    const cleanQuery = query.trim().replace(/[^a-zA-Z0-9\s,]/g, "").replace(/\s+/g, ",");
-    const searchUrl = `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanQuery)}`;
+    const cleanQuery = encodeURIComponent(query.trim().replace(/\s+/g, " "));
+    const searchUrl = `https://unsplash.com/napi/search/photos?query=${cleanQuery}&per_page=10`;
 
-    // Resolve redirect URL with a 6 second timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
 
-    const res = await fetch(searchUrl, {
-      method: "HEAD",
+    const response = await fetch(searchUrl, {
       signal: controller.signal,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -26,14 +23,22 @@ export const POST: APIRoute = async ({ request }) => {
     });
     clearTimeout(timeout);
 
-    if (res.ok) {
-      return new Response(JSON.stringify({ imageUrl: res.url }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const photo = data.results[0];
+        const rawUrl = photo.urls?.raw || photo.urls?.regular;
+        if (rawUrl) {
+          const finalUrl = `${rawUrl.split('?')[0]}?q=80&w=1080&auto=format&fit=crop`;
+          return new Response(JSON.stringify({ imageUrl: finalUrl }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+      }
     }
 
-    throw new Error("Failed to search image");
+    throw new Error("No results found or request failed");
   } catch (err: any) {
     console.error("Resolve image error:", err);
     // Fall back to a premium static abstract image url

@@ -5,7 +5,16 @@ import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from "fireb
 import { toast } from "sonner";
 
 type Project = { name: string; colorPrimary: string; [key: string]: any };
-type Carousel = { id: string; title: string; slides?: any[]; status: string; createdAt?: { seconds: number } };
+type Carousel = { 
+  id: string; 
+  title: string; 
+  slides?: any[]; 
+  status: string; 
+  createdAt?: { seconds: number };
+  bgImageUrl?: string | null;
+  bgOpacity?: number;
+  aspectRatio?: string;
+};
 
 export const Dashboard = () => {
   const [status, setStatus] = useState<"loading" | "no-brand" | "ready" | "error">("loading");
@@ -218,11 +227,27 @@ export const Dashboard = () => {
                 className="border-4 border-black bg-white shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all cursor-pointer overflow-hidden"
               >
                 <div
-                  className="h-28 border-b-4 border-black flex items-end p-4 relative"
+                  className="h-28 border-b-4 border-black flex items-end p-4 relative overflow-hidden"
                   style={{ backgroundColor: (activeProject?.colorPrimary || "#FFB800") + "30" }}
                 >
+                  {/* Thumbnail Preview Watermark */}
+                  {carousel.slides && carousel.slides.length > 0 && (
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-25">
+                      <div
+                        className="absolute top-0 left-0 w-[340px] origin-top-left scale-[0.33] font-space"
+                        style={{
+                          aspectRatio: carousel.aspectRatio || "4/5",
+                          backgroundColor: "white",
+                          "--bg-image": carousel.bgImageUrl ? `url('${carousel.bgImageUrl}')` : "none",
+                          "--bg-opacity": carousel.bgOpacity !== undefined ? carousel.bgOpacity : 0.05,
+                        } as React.CSSProperties}
+                        dangerouslySetInnerHTML={{ __html: carousel.slides[0].html }}
+                      />
+                    </div>
+                  )}
+
                   <span
-                    className="text-[11px] font-black uppercase px-2 py-0.5 border-2 border-black"
+                    className="text-[11px] font-black uppercase px-2 py-0.5 border-2 border-black relative z-10"
                     style={{ backgroundColor: carousel.status === "complete" ? "#51CF66" : "#E9ECEF" }}
                   >
                     {carousel.status === "complete" ? "Ready" : "Draft"}
