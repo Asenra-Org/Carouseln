@@ -481,7 +481,7 @@ export const Generator = () => {
       <div className="flex flex-1 overflow-hidden flex-col lg:flex-row bg-gray-100">
         
         {/* Left: Editor Panel */}
-        <div className={`w-full lg:w-[450px] bg-white lg:border-r-4 border-black flex flex-col z-10 overflow-y-auto shrink-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,0.1)] ${
+        <div className={`w-full lg:w-[450px] bg-white lg:border-r-4 border-black flex flex-col z-10 overflow-y-auto flex-1 min-h-0 lg:flex-none lg:shrink-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,0.1)] ${
           activeTab === "editor" ? "flex" : "hidden lg:flex"
         }`}>
           <div className="p-6 flex flex-col gap-8">
