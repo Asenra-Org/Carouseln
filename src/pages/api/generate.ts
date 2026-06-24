@@ -90,6 +90,58 @@ function getFallbackImage(query: string): string {
   return FALLBACK_IMAGES.abstract;
 }
 
+function getFlickrTag(query: string): string {
+  const q = query.toLowerCase();
+  if (q.includes("tech") || q.includes("code") || q.includes("developer") || q.includes("program") || q.includes("computer") || q.includes("web")) {
+    return "coding";
+  }
+  if (q.includes("office") || q.includes("workspace") || q.includes("desk")) {
+    return "workspace";
+  }
+  if (q.includes("design") || q.includes("creative") || q.includes("art")) {
+    return "design";
+  }
+  if (q.includes("finance") || q.includes("money") || q.includes("business") || q.includes("analytics")) {
+    return "office";
+  }
+  if (q.includes("medical") || q.includes("health") || q.includes("doctor")) {
+    return "healthcare";
+  }
+  if (q.includes("education") || q.includes("learn") || q.includes("book")) {
+    return "education";
+  }
+  return "minimalist";
+}
+
+async function fetchFlickrImage(query: string): Promise<string | null> {
+  try {
+    const cleanTag = getFlickrTag(query);
+    const url = `https://www.flickr.com/services/feeds/photos_public.gne?tags=${encodeURIComponent(cleanTag)}&format=json&nojsoncallback=1`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items && data.items.length > 0) {
+        const randomItem = data.items[Math.floor(Math.random() * Math.min(5, data.items.length))];
+        const mUrl = randomItem.media?.m;
+        if (mUrl) {
+          return mUrl.replace("_m.jpg", "_b.jpg");
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Flickr failed:", e);
+  }
+  return null;
+}
+
 async function resolveInitialImage(industry: string, topic: string, imageKeywords?: string): Promise<{ url: string; query: string }> {
   let queryTerm = "";
   try {
@@ -142,6 +194,14 @@ async function resolveInitialImage(industry: string, topic: string, imageKeyword
   } catch (err) {
     console.error("Resolve initial image failed:", err);
   }
+
+  // Tier 2: Flickr Fallback
+  const flickrUrl = await fetchFlickrImage(queryTerm);
+  if (flickrUrl) {
+    return { url: flickrUrl, query: queryTerm };
+  }
+
+  // Tier 3: Curated Static Fallback
   return { url: getFallbackImage(queryTerm), query: queryTerm || `${industry} ${topic}`.trim() };
 }
 

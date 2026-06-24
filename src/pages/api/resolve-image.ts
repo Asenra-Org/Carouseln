@@ -15,7 +15,30 @@ const FALLBACK_IMAGES: Record<string, string> = {
   abstract: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1080&auto=format&fit=crop",
 };
 
-function getFallbackImage(query: string): string {
+function getFlickrTag(query: string): string {
+  const q = query.toLowerCase();
+  if (q.includes("tech") || q.includes("code") || q.includes("developer") || q.includes("program") || q.includes("computer") || q.includes("web")) {
+    return "coding";
+  }
+  if (q.includes("office") || q.includes("workspace") || q.includes("desk")) {
+    return "workspace";
+  }
+  if (q.includes("design") || q.includes("creative") || q.includes("art")) {
+    return "design";
+  }
+  if (q.includes("finance") || q.includes("money") || q.includes("business") || q.includes("analytics")) {
+    return "office";
+  }
+  if (q.includes("medical") || q.includes("health") || q.includes("doctor")) {
+    return "healthcare";
+  }
+  if (q.includes("education") || q.includes("learn") || q.includes("book")) {
+    return "education";
+  }
+  return "minimalist";
+}
+
+function getStaticFallback(query: string): string {
   if (!query) return FALLBACK_IMAGES.abstract;
   const q = query.toLowerCase();
   if (q.includes("tech") || q.includes("code") || q.includes("developer") || q.includes("program") || q.includes("computer")) {
@@ -45,6 +68,35 @@ function getFallbackImage(query: string): string {
   return FALLBACK_IMAGES.abstract;
 }
 
+async function fetchFlickrImage(query: string): Promise<string | null> {
+  try {
+    const cleanTag = getFlickrTag(query);
+    const url = `https://www.flickr.com/services/feeds/photos_public.gne?tags=${encodeURIComponent(cleanTag)}&format=json&nojsoncallback=1`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items && data.items.length > 0) {
+        const randomItem = data.items[Math.floor(Math.random() * Math.min(5, data.items.length))];
+        const mUrl = randomItem.media?.m;
+        if (mUrl) {
+          return mUrl.replace("_m.jpg", "_b.jpg");
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Flickr failed:", e);
+  }
+  return null;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   let query = "";
   try {
@@ -66,7 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
     const searchUrl = `https://unsplash.com/napi/search/photos?query=${cleanQuery}&per_page=15&orientation=landscape`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(searchUrl, {
       signal: controller.signal,
@@ -90,12 +142,20 @@ export const POST: APIRoute = async ({ request }) => {
         }
       }
     }
-
     throw new Error("No results found or request failed");
   } catch (err: any) {
-    console.error("Resolve image error:", err);
+    console.error("Resolve image error, trying Flickr fallback:", err);
+    
+    const flickrUrl = await fetchFlickrImage(query);
+    if (flickrUrl) {
+      return new Response(JSON.stringify({ imageUrl: flickrUrl }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     return new Response(JSON.stringify({ 
-      imageUrl: getFallbackImage(query) 
+      imageUrl: getStaticFallback(query) 
     }), {
       status: 200,
       headers: { "Content-Type": "application/json" }
