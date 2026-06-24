@@ -475,7 +475,8 @@ Ensure the HTML matches the brand colors, uses the typography pairings, has larg
     `.trim();
 
     let responseText = "";
-    let retries = 3;
+    const maxRetries = 5;
+    let retries = maxRetries;
 
     while (retries > 0) {
       try {
@@ -483,14 +484,17 @@ Ensure the HTML matches the brand colors, uses the typography pairings, has larg
         responseText = result.response.text();
         break; // Success, exit retry loop
       } catch (err: any) {
-        console.error("Gemini API error:", err.message || err);
+        const errMsg = err.message || "";
+        console.error("Gemini API error:", errMsg || err);
         
         // If it's a 503 (service unavailable) or 429 (rate limit), retry.
-        const isRetryable = err.message && (err.message.includes("503") || err.message.includes("429"));
+        const isRetryable = errMsg.includes("503") || errMsg.includes("429") || errMsg.includes("Service Unavailable") || errMsg.includes("high demand");
         
         if (isRetryable && retries > 1) {
-          console.warn(`Gemini 503/429 error. Retrying in 2 seconds... (${retries - 1} left)`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          const attempt = maxRetries - retries + 1;
+          const delay = 1500 * Math.pow(2, attempt); // 3s, 6s, 12s, 24s
+          console.warn(`Gemini 503/429 error on attempt ${attempt}. Retrying in ${delay / 1000} seconds... (${retries - 1} retries left)`);
+          await new Promise(resolve => setTimeout(resolve, delay));
           retries--;
         } else {
           throw err;
