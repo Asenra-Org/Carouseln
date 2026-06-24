@@ -2,15 +2,68 @@ import type { APIRoute } from "astro";
 
 export const prerender = false;
 
+const FALLBACK_IMAGES: Record<string, string> = {
+  tech: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1080&auto=format&fit=crop",
+  workspace: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1080&auto=format&fit=crop",
+  office: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1080&auto=format&fit=crop",
+  design: "https://images.unsplash.com/photo-1561070791-26c113006238?q=80&w=1080&auto=format&fit=crop",
+  analytics: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1080&auto=format&fit=crop",
+  finance: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?q=80&w=1080&auto=format&fit=crop",
+  meeting: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1080&auto=format&fit=crop",
+  medical: "https://images.unsplash.com/photo-1584515901407-d8f469399991?q=80&w=1080&auto=format&fit=crop",
+  education: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1080&auto=format&fit=crop",
+  abstract: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1080&auto=format&fit=crop",
+};
+
+function getFallbackImage(query: string): string {
+  if (!query) return FALLBACK_IMAGES.abstract;
+  const q = query.toLowerCase();
+  if (q.includes("tech") || q.includes("code") || q.includes("developer") || q.includes("program") || q.includes("computer")) {
+    return FALLBACK_IMAGES.tech;
+  }
+  if (q.includes("office") || q.includes("workspace") || q.includes("desk")) {
+    return FALLBACK_IMAGES.workspace;
+  }
+  if (q.includes("design") || q.includes("creative") || q.includes("art")) {
+    return FALLBACK_IMAGES.design;
+  }
+  if (q.includes("analytics") || q.includes("chart") || q.includes("data")) {
+    return FALLBACK_IMAGES.analytics;
+  }
+  if (q.includes("finance") || q.includes("money") || q.includes("business")) {
+    return FALLBACK_IMAGES.finance;
+  }
+  if (q.includes("meeting") || q.includes("team") || q.includes("group")) {
+    return FALLBACK_IMAGES.meeting;
+  }
+  if (q.includes("medical") || q.includes("health") || q.includes("doctor")) {
+    return FALLBACK_IMAGES.medical;
+  }
+  if (q.includes("education") || q.includes("learn") || q.includes("book")) {
+    return FALLBACK_IMAGES.education;
+  }
+  return FALLBACK_IMAGES.abstract;
+}
+
 export const POST: APIRoute = async ({ request }) => {
+  let query = "";
   try {
-    const { query } = await request.json();
+    const body = await request.json();
+    query = body.query;
     if (!query) {
       return new Response(JSON.stringify({ error: "Query is required" }), { status: 400 });
     }
 
-    const cleanQuery = encodeURIComponent(query.trim().replace(/\s+/g, " "));
-    const searchUrl = `https://unsplash.com/napi/search/photos?query=${cleanQuery}&per_page=10`;
+    let finalQuery = query.trim().replace(/\s+/g, " ");
+    const lowerQuery = finalQuery.toLowerCase();
+    if (lowerQuery.includes("tech agency") || lowerQuery === "tech" || lowerQuery.includes("agency") || lowerQuery === "webs" || lowerQuery === "website") {
+      finalQuery = "tech workspace laptop coding";
+    } else if (lowerQuery.includes("coding") || lowerQuery.includes("programming") || lowerQuery.includes("developer")) {
+      finalQuery = "developer coding workspace";
+    }
+
+    const cleanQuery = encodeURIComponent(finalQuery);
+    const searchUrl = `https://unsplash.com/napi/search/photos?query=${cleanQuery}&per_page=15&orientation=landscape`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
@@ -41,9 +94,8 @@ export const POST: APIRoute = async ({ request }) => {
     throw new Error("No results found or request failed");
   } catch (err: any) {
     console.error("Resolve image error:", err);
-    // Fall back to a premium static abstract image url
     return new Response(JSON.stringify({ 
-      imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1080&auto=format&fit=crop" 
+      imageUrl: getFallbackImage(query) 
     }), {
       status: 200,
       headers: { "Content-Type": "application/json" }
