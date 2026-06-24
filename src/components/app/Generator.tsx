@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
-import { Sparkles, Save, Download, ArrowLeft, ArrowRight, Trash2 } from "lucide-react";
+import { Sparkles, Save, Download, ArrowLeft, ArrowRight, Trash2, AlertCircle } from "lucide-react";
 import { auth, db } from "../../lib/firebase/client";
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
@@ -22,6 +22,16 @@ export const Generator = () => {
   const [bgOpacity, setBgOpacity] = useState<number>(0.08);
   const [imageQuery, setImageQuery] = useState<string>("");
   const [imageLoading, setImageLoading] = useState<boolean>(false);
+
+  // Share to Unlock States
+  const [generationsToday, setGenerationsToday] = useState<number>(0);
+  const [bonusCreditsToday, setBonusCreditsToday] = useState<number>(0);
+  const [lastGenDate, setLastGenDate] = useState<string>("");
+  const [lastShareDate, setLastShareDate] = useState<string>("");
+  const [usedShareLinks, setUsedShareLinks] = useState<string[]>([]);
+  const [shareUrlInput, setShareUrlInput] = useState<string>("");
+  const [verifyingShare, setVerifyingShare] = useState<boolean>(false);
+
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -80,11 +90,28 @@ export const Generator = () => {
       try {
         let activeProjData: any = null;
         const userDoc = await withTimeout(getDoc(doc(db, "users", user.uid)), 8000);
-        if (userDoc.exists() && userDoc.data().activeProjectId) {
-          const projectDoc = await withTimeout(getDoc(doc(db, "projects", userDoc.data().activeProjectId)), 8000);
-          if (projectDoc.exists()) {
-            activeProjData = { id: projectDoc.id, ...projectDoc.data() };
-            setActiveProject(activeProjData);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const todayStr = new Date().toISOString().split('T')[0];
+          
+          const genDate = userData.lastGenDate || "";
+          const genToday = genDate === todayStr ? (userData.generationsToday || 0) : 0;
+          setGenerationsToday(genToday);
+          setLastGenDate(genDate);
+
+          const shareDate = userData.lastShareDate || "";
+          const bonusToday = shareDate === todayStr ? (userData.bonusCreditsToday || 0) : 0;
+          setBonusCreditsToday(bonusToday);
+          setLastShareDate(shareDate);
+
+          setUsedShareLinks(userData.usedShareLinks || []);
+
+          if (userData.activeProjectId) {
+            const projectDoc = await withTimeout(getDoc(doc(db, "projects", userData.activeProjectId)), 8000);
+            if (projectDoc.exists()) {
+              activeProjData = { id: projectDoc.id, ...projectDoc.data() };
+              setActiveProject(activeProjData);
+            }
           }
         }
 
@@ -145,16 +172,20 @@ export const Generator = () => {
       
       const todayStr = new Date().toISOString().split('T')[0];
       const lastGenDate = userData.lastGenDate || "";
-      let generationsToday = userData.generationsToday || 0;
+      let genCount = userData.generationsToday || 0;
 
       if (lastGenDate !== todayStr) {
-        generationsToday = 0; // reset for a new day
+        genCount = 0; // reset for a new day
       }
+
+      const shareDate = userData.lastShareDate || "";
+      const bonusCredits = shareDate === todayStr ? (userData.bonusCreditsToday || 0) : 0;
+      const totalAllowed = 1 + bonusCredits;
 
       const isTester = currentUser.email === "karanpatil82005@gmail.com";
 
-      if (generationsToday >= 1 && !isTester) {
-        throw new Error("Free limit reached: You can generate 1 carousel per day. Please try again tomorrow!");
+      if (genCount >= totalAllowed && !isTester) {
+        throw new Error(`Free limit reached: You can generate ${totalAllowed} carousel(s) per day. Please try again tomorrow!`);
       }
 
       const res = await fetch("/api/generate", {
@@ -183,14 +214,18 @@ export const Generator = () => {
       }
 
       // Increment limit and save in Firestore
+      const newGenCount = genCount + 1;
       await withTimeout(
         setDoc(userRef, {
-          generationsToday: generationsToday + 1,
+          generationsToday: newGenCount,
           lastGenDate: todayStr,
           updatedAt: serverTimestamp()
         }, { merge: true }),
         8000
       );
+
+      setGenerationsToday(newGenCount);
+      setLastGenDate(todayStr);
 
       setSlides(data.slides);
       setBgImageUrl(data.bgImageUrl || null);
@@ -199,12 +234,71 @@ export const Generator = () => {
       }
       setCurrentSlideIndex(0);
       setIsDirty(true);
-      toast.success(isTester ? "Carousel generated! (Unlimited Dev Mode)" : "Carousel generated! (1/1 today)");
+      toast.success(isTester ? "Carousel generated! (Unlimited Dev Mode)" : `Carousel generated! (${newGenCount}/${totalAllowed} today)`);
     } catch (err: any) {
       console.error("Client generation error:", err);
       toast.error(err.message || "Generation failed", { duration: 6000 });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyShare = async () => {
+    if (!shareUrlInput || !shareUrlInput.trim()) {
+      toast.error("Please paste your shared post link first.");
+      return;
+    }
+    const url = shareUrlInput.trim();
+    
+    // Regular Expression validation for X/Twitter and LinkedIn domains
+    const twitterRegex = /^https?:\/\/(www\.)?(twitter|x)\.com\/\S+/i;
+    const linkedinRegex = /^https?:\/\/(www\.)?linkedin\.com\/\S+/i;
+    
+    const isTwitter = twitterRegex.test(url);
+    const isLinkedin = linkedinRegex.test(url);
+    
+    if (!isTwitter && !isLinkedin) {
+      toast.error("Invalid URL: Please paste a valid X (Twitter) or LinkedIn post link.");
+      return;
+    }
+
+    setVerifyingShare(true);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Not logged in");
+
+      // Check if this link has already been used by this user
+      if (usedShareLinks.includes(url)) {
+        throw new Error("This link has already been used to unlock credits.");
+      }
+
+      const userRef = doc(db, "users", currentUser.uid);
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // Update Firestore: unlock +3 credits, set last share date, and add to used links
+      const newUsedLinks = [...usedShareLinks, url];
+      await withTimeout(
+        setDoc(userRef, {
+          bonusCreditsToday: 3,
+          lastShareDate: todayStr,
+          usedShareLinks: newUsedLinks,
+          updatedAt: serverTimestamp()
+        }, { merge: true }),
+        8000
+      );
+
+      // Update local states
+      setBonusCreditsToday(3);
+      setLastShareDate(todayStr);
+      setUsedShareLinks(newUsedLinks);
+      setShareUrlInput("");
+      
+      toast.success("Congratulations! +3 extra generations unlocked for today!");
+    } catch (err: any) {
+      console.error("Share verification error:", err);
+      toast.error(err.message || "Failed to verify share link");
+    } finally {
+      setVerifyingShare(false);
     }
   };
 
@@ -319,7 +413,7 @@ export const Generator = () => {
   const primaryColor = activeProject?.colorPrimary || "#C9A84C";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] lg:h-screen bg-white">
+    <div className="flex flex-col h-[calc(100dvh-64px)] lg:h-screen bg-white">
       {/* Header */}
       <header className="h-[70px] border-b-4 border-black flex items-center justify-between px-3 lg:px-6 bg-[var(--color-bg)] z-10 shrink-0 gap-2">
         <div className="flex items-center gap-2 lg:gap-4 shrink-0">
@@ -392,45 +486,117 @@ export const Generator = () => {
         }`}>
           <div className="p-6 flex flex-col gap-8">
             
-            {/* AI Generation Form */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-[16px] font-bold text-black uppercase flex items-center gap-2">
-                  <Sparkles size={18} className="text-black" /> AI Studio
-                </h2>
-              </div>
+            {/* AI Generation Form or Limit Reached Widget */}
+            {(() => {
+              const isTester = auth.currentUser?.email === "karanpatil82005@gmail.com";
+              const isLimitReached = generationsToday >= (1 + bonusCreditsToday) && !isTester;
               
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="generator-topic" className="text-[14px] font-bold text-gray-600 uppercase">Topic or Idea</label>
-                <textarea
-                  id="generator-topic"
-                  name="topic"
-                  className="w-full bg-white border-4 border-black rounded-none px-3 py-2 text-[16px] font-bold text-black placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:shadow-[4px_4px_0px_0px_#000] transition-shadow resize-none min-h-[100px]"
-                  placeholder="e.g. 5 ways to optimize React performance in large codebases…"
-                  value={topic}
-                  onChange={e => setTopic(e.target.value)}
-                />
-              </div>
+              if (isLimitReached) {
+                return (
+                  <div className="flex flex-col gap-4 p-4 border-4 border-black bg-gray-50 shadow-[4px_4px_0px_0px_#000] animate-in slide-in-from-top duration-300">
+                    <div className="flex items-center gap-2 text-red-500">
+                      <AlertCircle size={24} strokeWidth={2.5} />
+                      <h2 className="text-[14px] lg:text-[16px] font-black uppercase tracking-tight">Daily Limit Reached (1/1)</h2>
+                    </div>
+                    <p className="text-[12px] lg:text-[13px] font-bold text-gray-700 leading-snug">
+                      Aapne aaj ki free carousel generation limit reach kar li hai. 
+                      Carouseln ko social media par share karke instantly **+3 generations** aur unlock karein!
+                    </p>
 
-              <div className="flex gap-4">
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <label htmlFor="generator-slide-count" className="text-[14px] font-bold text-gray-600 uppercase">Slide Count</label>
-                  <select
-                    id="generator-slide-count"
-                    name="slideCount"
-                    className="w-full bg-white border-4 border-black rounded-none px-3 h-12 text-[16px] font-bold text-black focus:outline-none focus:ring-0 focus:shadow-[4px_4px_0px_0px_#000] transition-shadow"
-                  >
-                    <option value="5-7">5–7 slides (Ideal)</option>
-                    <option value="8-10">8–10 slides (Deep dive)</option>
-                    <option value="3-4">3–4 slides (Bite-sized)</option>
-                  </select>
+                    <div className="flex flex-col gap-2 mt-1">
+                      <span className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Step 1: Share on Social Media</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const text = encodeURIComponent("Create stunning social media carousels in 30 seconds with @Carouseln! Try it for free at https://carouseln.com 🚀 #SaaS #Marketing #IndieHackers");
+                            window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+                          }}
+                          className="flex-1 bg-[#1DA1F2] text-white border-2 border-black font-black uppercase text-[11px] lg:text-[12px] h-10 shadow-[2px_2px_0px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          Share on X
+                        </button>
+                        <button
+                          onClick={() => {
+                            const url = encodeURIComponent("https://carouseln.com");
+                            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, "_blank");
+                          }}
+                          className="flex-1 bg-[#0A66C2] text-white border-2 border-black font-black uppercase text-[11px] lg:text-[12px] h-10 shadow-[2px_2px_0px_0px_#000] active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          Share on LinkedIn
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-1">
+                      <label htmlFor="share-verify-url" className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Step 2: Paste Shared Post Link</label>
+                      <div className="flex flex-col gap-2">
+                        <input
+                          id="share-verify-url"
+                          type="text"
+                          className="w-full bg-white border-2 border-black rounded-none px-3 h-10 text-[13px] font-bold text-black focus:outline-none placeholder:text-gray-400"
+                          placeholder="https://x.com/.../status/... or LinkedIn link"
+                          value={shareUrlInput}
+                          onChange={(e) => setShareUrlInput(e.target.value)}
+                        />
+                        <Button
+                          onClick={handleVerifyShare}
+                          isLoading={verifyingShare}
+                          className="w-full h-10 text-[12px] uppercase"
+                        >
+                          Verify & Claim +3 Credits
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-[16px] font-bold text-black uppercase flex items-center gap-2">
+                      <Sparkles size={18} className="text-black" /> AI Studio
+                    </h2>
+                    {generationsToday > 0 && (
+                      <Badge variant="outline" className="border-2 border-black font-bold uppercase text-[10px] text-black">
+                        Used: {generationsToday} / {1 + bonusCreditsToday}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="generator-topic" className="text-[14px] font-bold text-gray-600 uppercase">Topic or Idea</label>
+                    <textarea
+                      id="generator-topic"
+                      name="topic"
+                      className="w-full bg-white border-4 border-black rounded-none px-3 py-2 text-[16px] font-bold text-black placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:shadow-[4px_4px_0px_0px_#000] transition-shadow resize-none min-h-[100px]"
+                      placeholder="e.g. 5 ways to optimize React performance in large codebases…"
+                      value={topic}
+                      onChange={e => setTopic(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex flex-col gap-1.5 flex-1">
+                      <label htmlFor="generator-slide-count" className="text-[14px] font-bold text-gray-600 uppercase">Slide Count</label>
+                      <select
+                        id="generator-slide-count"
+                        name="slideCount"
+                        className="w-full bg-white border-4 border-black rounded-none px-3 h-12 text-[16px] font-bold text-black focus:outline-none focus:ring-0 focus:shadow-[4px_4px_0px_0px_#000] transition-shadow"
+                      >
+                        <option value="5-7">5–7 slides (Ideal)</option>
+                        <option value="8-10">8–10 slides (Deep dive)</option>
+                        <option value="3-4">3–4 slides (Bite-sized)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <Button onClick={handleGenerate} isLoading={loading} className="w-full mt-2 h-12 text-[16px]">
+                    Generate Draft
+                  </Button>
                 </div>
-              </div>
-
-              <Button onClick={handleGenerate} isLoading={loading} className="w-full mt-2 h-12 text-[16px]">
-                Generate Draft
-              </Button>
-            </div>
+              );
+            })()}
 
             <hr className="border-t-4 border-black" />
 
@@ -692,10 +858,10 @@ export const Generator = () => {
               </p>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-3 md:p-8 relative z-10 overflow-y-auto min-h-0 w-full">
+            <div className="flex-1 flex flex-col items-center justify-start lg:justify-center p-3 md:p-8 relative z-10 overflow-y-auto min-h-0 w-full">
               
               {/* Carousel Rendering Frame */}
-              <div className="w-full max-w-[450px] flex justify-center items-center transition-all duration-300 h-full py-2 md:py-4">
+              <div className="w-full max-w-[450px] flex justify-center items-center transition-all duration-300 h-auto lg:h-full py-2 md:py-4 shrink-0">
                 {platformFrame === 'instagram' ? (
                   <div className="w-full bg-white border border-gray-300 rounded-md shadow-sm overflow-hidden flex flex-col my-auto max-h-full">
                     <div className="flex items-center p-3 border-b border-gray-200 gap-3 shrink-0">
