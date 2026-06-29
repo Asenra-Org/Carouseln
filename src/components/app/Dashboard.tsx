@@ -16,6 +16,16 @@ type Carousel = {
   aspectRatio?: string;
 };
 
+function injectBgIntoHtml(html: string | undefined, imageUrl: string | null | undefined, opacity: number): string {
+  if (!html) return "";
+  let processed = html;
+  const imgReplacement = imageUrl ? `url('${imageUrl}')` : "none";
+  processed = processed.replaceAll("var(--bg-image)", imgReplacement);
+  processed = processed.replaceAll("var(--bg-opacity, 0.08)", opacity.toString());
+  processed = processed.replaceAll("var(--bg-opacity)", opacity.toString());
+  return processed;
+}
+
 export const Dashboard = () => {
   const [status, setStatus] = useState<"loading" | "no-brand" | "ready" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
@@ -232,16 +242,23 @@ export const Dashboard = () => {
                 >
                   {/* Thumbnail Preview Watermark */}
                   {carousel.slides && carousel.slides.length > 0 && (
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-25">
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-85">
                       <div
-                        className="absolute top-0 left-0 w-[340px] origin-top-left scale-[0.33] font-space"
+                        className="absolute top-0 left-0 font-space"
                         style={{
+                          width: "300%",
+                          transform: "scale(0.3333)",
+                          transformOrigin: "top left",
                           aspectRatio: carousel.aspectRatio || "4/5",
                           backgroundColor: "white",
-                          "--bg-image": carousel.bgImageUrl ? `url('${carousel.bgImageUrl}')` : "none",
-                          "--bg-opacity": carousel.bgOpacity !== undefined ? carousel.bgOpacity : 0.05,
-                        } as React.CSSProperties}
-                        dangerouslySetInnerHTML={{ __html: carousel.slides[0].html }}
+                        }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: injectBgIntoHtml(
+                            carousel.slides[0].html, 
+                            carousel.bgImageUrl, 
+                            carousel.bgOpacity !== undefined ? carousel.bgOpacity : 0.05
+                          ) 
+                        }}
                       />
                     </div>
                   )}

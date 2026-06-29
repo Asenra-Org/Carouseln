@@ -9,6 +9,24 @@ import { toast } from "sonner";
 import * as htmlToImage from 'html-to-image';
 import JSZip from 'jszip';
 
+function injectBgIntoHtml(html: string | undefined, imageUrl: string | null | undefined, opacity: number): string {
+  if (!html) return "";
+  let processed = html;
+  const imgReplacement = imageUrl ? `url('${imageUrl}')` : "none";
+  processed = processed.replaceAll("var(--bg-image)", imgReplacement);
+  processed = processed.replaceAll("var(--bg-opacity, 0.08)", opacity.toString());
+  processed = processed.replaceAll("var(--bg-opacity)", opacity.toString());
+  return processed;
+}
+
+function scaleStyleValue(val: string, scale: number = 3): string {
+  if (!val) return "0px";
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  const unit = val.replace(num.toString(), "");
+  return `${num * scale}${unit}`;
+}
+
 export const Generator = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -22,6 +40,31 @@ export const Generator = () => {
   const [bgOpacity, setBgOpacity] = useState<number>(0.08);
   const [imageQuery, setImageQuery] = useState<string>("");
   const [imageLoading, setImageLoading] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState<boolean>(false);
+
+  const performImageSearch = async (query: string) => {
+    if (!query) return;
+    setSearchLoading(true);
+    try {
+      const res = await fetch("/api/search-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      if (res.ok && data.results) {
+        setSearchResults(data.results);
+      } else {
+        toast.error(data.error || "Failed to search images");
+      }
+    } catch (err: any) {
+      console.error("Image search failed:", err);
+      toast.error("Failed to load search results");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   // Share to Unlock States
   const [generationsToday, setGenerationsToday] = useState<number>(0);
@@ -129,9 +172,11 @@ export const Generator = () => {
               setSlides(data.slides || []);
               setBgImageUrl(data.bgImageUrl || null);
               setBgOpacity(data.bgOpacity !== undefined ? data.bgOpacity : 0.05);
-              setImageQuery(data.imageQuery || `${activeProjData?.industry || ""} ${data.title || ""}`.trim());
+              const initialQuery = data.imageQuery || `${activeProjData?.industry || ""} ${data.title || ""}`.trim();
+              setImageQuery(initialQuery);
               setCurrentSlideIndex(0);
               toast.success("Loaded saved carousel!");
+              performImageSearch(initialQuery);
             } else {
               toast.error("Unauthorized access to carousel");
             }
@@ -231,6 +276,7 @@ export const Generator = () => {
       setBgImageUrl(data.bgImageUrl || null);
       if (data.imageQuery) {
         setImageQuery(data.imageQuery);
+        performImageSearch(data.imageQuery);
       }
       setCurrentSlideIndex(0);
       setIsDirty(true);
@@ -379,12 +425,12 @@ export const Generator = () => {
         // Wait a tick for react to render the slide
         await new Promise(resolve => setTimeout(resolve, 200)); 
         
-        const node = document.getElementById('carousel-preview-node');
+        const node = document.getElementById('carousel-export-node');
         if (!node) continue;
         
         const dataUrl = await htmlToImage.toPng(node, {
           quality: 1,
-          pixelRatio: 1080 / node.offsetWidth, // scale up to 1080px width
+          pixelRatio: 1,
         });
         
         const base64Data = dataUrl.split(',')[1];
@@ -713,40 +759,72 @@ export const Generator = () => {
                       placeholder="e.g. tech, minimal office..."
                       value={imageQuery}
                       onChange={(e) => setImageQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          performImageSearch(imageQuery);
+                        }
+                      }}
                     />
                     <Button
                       variant="outline"
                       className="h-10 border-2 py-0 px-3 text-[13px]"
-                      onClick={async () => {
-                        if (!imageQuery) {
-                          toast.error("Please enter search keywords first");
-                          return;
-                        }
-                        setImageLoading(true);
-                        try {
-                          const res = await fetch("/api/resolve-image", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ query: imageQuery }),
-                          });
-                          const data = await res.json();
-                          if (!res.ok) throw new Error(data.error || "Failed to search");
-                          setBgImageUrl(data.imageUrl);
-                          setIsDirty(true);
-                          toast.success("Background image updated!");
-                        } catch (err: any) {
-                          toast.error(err.message || "Failed to fetch image");
-                        } finally {
-                          setImageLoading(false);
-                        }
-                      }}
-                      isLoading={imageLoading}
+                      onClick={() => performImageSearch(imageQuery)}
+                      isLoading={searchLoading}
                       disabled={slides.length === 0}
                     >
-                      Update
+                      Search
                     </Button>
                   </div>
                 </div>
+
+                {/* Thumbnails Grid */}
+                {slides.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Select background image</span>
+                    
+                    {searchLoading ? (
+                      <div className="h-[120px] border-4 border-dashed border-black flex items-center justify-center bg-gray-50">
+                        <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto p-1 bg-gray-50 border-4 border-black">
+                        {searchResults.map((img) => {
+                          const isSelected = bgImageUrl === img.full;
+                          return (
+                            <button
+                              key={img.id}
+                              onClick={() => {
+                                setBgImageUrl(img.full);
+                                setIsDirty(true);
+                                toast.success("Background image updated!");
+                              }}
+                              className={`relative aspect-[4/3] border-2 overflow-hidden transition-all group ${
+                                isSelected ? "border-[#FFB800] ring-4 ring-[#FFB800]" : "border-black hover:border-[#FFB800]"
+                              }`}
+                              title={`Photo by ${img.author}`}
+                            >
+                              <img
+                                src={img.thumb}
+                                alt={`By ${img.author}`}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                loading="lazy"
+                              />
+                              {isSelected && (
+                                <div className="absolute inset-0 bg-[#FFB800]/20 flex items-center justify-center">
+                                  <span className="bg-black text-[#FFB800] font-black text-[10px] uppercase px-1.5 py-0.5 border border-black shadow-[2px_2px_0px_0px_#000]">Selected</span>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="h-[80px] border-4 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 text-[12px] font-bold text-gray-400 uppercase">
+                        No search results yet
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-3 mt-1">
                   <div className="flex items-center justify-between">
@@ -883,12 +961,25 @@ export const Generator = () => {
                       >
                         <div 
                           className="absolute inset-0 w-full h-full"
-                          style={{
-                            "--bg-image": bgImageUrl ? `url('${bgImageUrl}')` : 'none',
-                            "--bg-opacity": bgOpacity,
-                          } as React.CSSProperties}
-                          dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
+                          dangerouslySetInnerHTML={{ 
+                            __html: injectBgIntoHtml(slides[currentSlideIndex]?.html, bgImageUrl, bgOpacity) 
+                          }}
                         />
+                        {/* Anti-screenshot watermark overlay */}
+                        <div className="absolute inset-0 z-40 pointer-events-none select-none flex flex-col justify-around overflow-hidden opacity-[0.15] mix-blend-difference text-white">
+                          <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                            <span>carouseln.com</span>
+                            <span>carouseln.com</span>
+                          </div>
+                          <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                            <span>carouseln.com</span>
+                            <span>carouseln.com</span>
+                          </div>
+                          <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                            <span>carouseln.com</span>
+                            <span>carouseln.com</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Pagination indicator overlay (placed outside preview node to avoid capturing during export) */}
@@ -934,12 +1025,25 @@ export const Generator = () => {
                       >
                         <div 
                           className="absolute inset-0 w-full h-full"
-                          style={{
-                            "--bg-image": bgImageUrl ? `url('${bgImageUrl}')` : 'none',
-                            "--bg-opacity": bgOpacity,
-                          } as React.CSSProperties}
-                          dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
+                          dangerouslySetInnerHTML={{ 
+                            __html: injectBgIntoHtml(slides[currentSlideIndex]?.html, bgImageUrl, bgOpacity) 
+                          }}
                         />
+                        {/* Anti-screenshot watermark overlay */}
+                        <div className="absolute inset-0 z-40 pointer-events-none select-none flex flex-col justify-around overflow-hidden opacity-[0.15] mix-blend-difference text-white">
+                          <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                            <span>carouseln.com</span>
+                            <span>carouseln.com</span>
+                          </div>
+                          <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                            <span>carouseln.com</span>
+                            <span>carouseln.com</span>
+                          </div>
+                          <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                            <span>carouseln.com</span>
+                            <span>carouseln.com</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Pagination indicator overlay (placed outside preview node to avoid capturing during export) */}
@@ -978,12 +1082,25 @@ export const Generator = () => {
                     >
                       <div 
                         className="absolute inset-0 w-full h-full"
-                        style={{
-                          "--bg-image": bgImageUrl ? `url('${bgImageUrl}')` : 'none',
-                          "--bg-opacity": bgOpacity,
-                        } as React.CSSProperties}
-                        dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: injectBgIntoHtml(slides[currentSlideIndex]?.html, bgImageUrl, bgOpacity) 
+                        }}
                       />
+                      {/* Anti-screenshot watermark overlay */}
+                      <div className="absolute inset-0 z-40 pointer-events-none select-none flex flex-col justify-around overflow-hidden opacity-[0.15] mix-blend-difference text-white">
+                        <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                          <span>carouseln.com</span>
+                          <span>carouseln.com</span>
+                        </div>
+                        <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                          <span>carouseln.com</span>
+                          <span>carouseln.com</span>
+                        </div>
+                        <div className="flex justify-around -rotate-12 scale-110 font-black text-[22px] tracking-widest uppercase">
+                          <span>carouseln.com</span>
+                          <span>carouseln.com</span>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Pagination indicator overlay (placed outside preview node to avoid capturing during export) */}
@@ -1033,6 +1150,51 @@ export const Generator = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Hidden high-resolution export node (Fixed at 1080px width) */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          left: '-9999px', 
+          top: '-9999px', 
+          width: '1080px', 
+          height: aspectRatio === '1:1' ? '1080px' : '1350px',
+          zIndex: -9999,
+          pointerEvents: 'none'
+        }}
+      >
+        <div 
+          id="carousel-export-node"
+          className={`${fontFamily} shrink-0 relative overflow-hidden`}
+          style={{ 
+            width: '1080px',
+            height: aspectRatio === '1:1' ? '1080px' : '1350px',
+            borderWidth: scaleStyleValue(borderWidth, 3),
+            borderRadius: scaleStyleValue(borderRadius, 3),
+            borderColor: 'black',
+            borderStyle: borderWidth !== '0px' ? 'solid' : 'none',
+            boxShadow: shadowType === 'neo' 
+              ? `36px 36px 0px 0px ${primaryColor}` 
+              : shadowType === 'soft' 
+                ? '0px 30px 90px rgba(0,0,0,0.1)' 
+                : 'none',
+            backgroundColor: 'white'
+          }}
+        >
+          <div 
+            className="absolute inset-0 w-full h-full"
+            style={{
+              transform: 'scale(3)',
+              transformOrigin: 'top left',
+              width: '360px',
+              height: aspectRatio === '1:1' ? '360px' : '450px'
+            }}
+            dangerouslySetInnerHTML={{ 
+              __html: injectBgIntoHtml(slides[currentSlideIndex]?.html, bgImageUrl, bgOpacity) 
+            }}
+          />
         </div>
       </div>
     </div>
